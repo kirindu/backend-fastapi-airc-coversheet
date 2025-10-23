@@ -12,6 +12,7 @@ from config.database import client
 
 from routes.route_routes import router as route_router
 from routes.truck_routes import router as truck_router
+from routes.trailer_routes import router as trailer_router
 from routes.driver_routes import router as driver_router
 from routes.landfill_routes import router as landfill_router
 
@@ -43,6 +44,7 @@ async def add_process_time_header(request: Request, call_next):
 # Si quiere permitir todos los orígenes, puedes usar unicamente ["*"]
 origins = [
     "https://coversheet-app.onrender.com",
+    "https://airc-coversheet.onrender.com",
     "http://www.render.com",
     "https://www.acedisposal.com",
     "http://localhost",
@@ -71,6 +73,7 @@ app.include_router(email_router, prefix="/api/utils", tags=["Email"])
 
 app.include_router(route_router, prefix="/api/routes", tags=["Routes"])
 app.include_router(truck_router, prefix="/api/trucks", tags=["Trucks"])
+app.include_router(trailer_router, prefix="/api/trailers", tags=["Trailers"])
 app.include_router(driver_router, prefix="/api/drivers", tags=["Drivers"])
 app.include_router(landfill_router, prefix="/api/landfills", tags=["Landfills"])
 
