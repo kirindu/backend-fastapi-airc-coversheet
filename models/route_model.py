@@ -6,8 +6,7 @@ from datetime import datetime, timezone
 
 
 class RouteModel(BaseModel):
-    routeNumber: str
-    lob: str
+    routeName: str
     active: bool
     createdAt: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
 

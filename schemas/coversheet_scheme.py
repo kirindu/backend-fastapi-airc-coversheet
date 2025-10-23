@@ -23,7 +23,7 @@ def coversheet_helper(coversheet) -> dict:
         
         # Additional fields
         "truckNumber": coversheet.get("truckNumber", ""),
-        "routeNumber": coversheet.get("routeNumber", ""),
+        "routeName": coversheet.get("routeName", ""),
         "driverName": coversheet.get("driverName", ""),
         
         # FIELDS

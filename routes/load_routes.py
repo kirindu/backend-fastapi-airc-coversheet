@@ -71,14 +71,14 @@ async def create_load_with_images(
             "images": image_paths if image_paths else []  # Asegurar que 'images' siempre sea una lista
         }
         
-# 🔍 Obtener routeNumber si hay route_id
+# 🔍 Obtener routeName si hay route_id
         if route_id:
             try:
                 route_doc = await routes_collection.find_one({"_id": ObjectId(route_id)})
-                if route_doc and route_doc.get("routeNumber"):
-                    data["routeNumber"] = route_doc["routeNumber"]
+                if route_doc and route_doc.get("routeName"):
+                    data["routeName"] = route_doc["routeName"]
             except Exception as lookup_error:
-                return error_response(f"Error al buscar routeN umber: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
+                return error_response(f"Error al buscar route Name: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
             
             
 # 🔍 Obtener landfillName si hay landfill_id
@@ -160,14 +160,14 @@ async def update_load_with_form(
             "images": image_paths
         }
         
-        # 🔍 Obtener routeNumber si hay route_id
+        # 🔍 Obtener routeName si hay route_id
         if route_id:
             try:
                 route_doc = await routes_collection.find_one({"_id": ObjectId(route_id)})
-                if route_doc and route_doc.get("routeNumber"):
-                    data["routeNumber"] = route_doc["routeNumber"]
+                if route_doc and route_doc.get("routeName"):
+                    data["routeName"] = route_doc["routeName"]
             except Exception as lookup_error:
-                return error_response(f"Error al buscar routeNumber: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
+                return error_response(f"Error al buscar routeName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
 
         
 # 🔍 Obtener landfillName si hay landfill_id

@@ -4,7 +4,7 @@ def sparetruckinfo_helper(sparetruckinfo) -> dict:
         "id": str(sparetruckinfo["_id"]),
         "spareTruckNumber": sparetruckinfo["spareTruckNumber"],
         "route_id": sparetruckinfo["route_id"],
-        "routeNumber": sparetruckinfo.get("routeNumber", ""),
+        "routeName": sparetruckinfo.get("routeName", ""),
         "leaveYard": sparetruckinfo["leaveYard"],
         "backInYard": sparetruckinfo["backInYard"],
         "startMiles": sparetruckinfo["startMiles"],

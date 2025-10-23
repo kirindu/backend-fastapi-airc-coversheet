@@ -87,12 +87,12 @@ async def create_coversheet(coversheet: CoversheetModel):
             if truck_doc and truck_doc.get("truckNumber"):
                 data["truckNumber"] = truck_doc["truckNumber"]
 
-        # Fetch routeNumber from routes_collection
+        # Fetch routeName from routes_collection
         route_id = data.get("route_id")
         if route_id:
             route_doc = await routes_collection.find_one({"_id": ObjectId(route_id)})
-            if route_doc and route_doc.get("routeNumber"):
-                data["routeNumber"] = route_doc["routeNumber"]
+            if route_doc and route_doc.get("routeName"):
+                data["routeName"] = route_doc["routeName"]
 
         # Fetch driverName from drivers_collection
         driver_id = data.get("driver_id")
@@ -168,12 +168,12 @@ async def get_coversheet(id: str):
 #             if truck_doc and truck_doc.get("truckNumber"):
 #                 data["truckNumber"] = truck_doc["truckNumber"]
 
-#         # Fetch routeNumber from routes_collection if route_id is provided
+#         # Fetch routeName from routes_collection if route_id is provided
 #         route_id = data.get("route_id")
 #         if route_id:
 #             route_doc = await routes_collection.find_one({"_id": ObjectId(route_id)})
-#             if route_doc and route_doc.get("routeNumber"):
-#                 data["routeNumber"] = route_doc["routeNumber"]
+#             if route_doc and route_doc.get("routeName"):
+#                 data["routeName"] = route_doc["routeName"]
 
 #         # Fetch driverName from drivers_collection if driver_id is provided
 #         driver_id = data.get("driver_id")
@@ -211,12 +211,12 @@ async def update_coversheet(id: str, coversheet: CoversheetModel):
             if truck_doc and truck_doc.get("truckNumber"):
                 data["truckNumber"] = truck_doc["truckNumber"]
 
-        # Fetch routeNumber si se actualizó route_id
+        # Fetch routeName si se actualizó route_id
         route_id = data.get("route_id")
         if route_id:
             route_doc = await routes_collection.find_one({"_id": ObjectId(route_id)})
-            if route_doc and route_doc.get("routeNumber"):
-                data["routeNumber"] = route_doc["routeNumber"]
+            if route_doc and route_doc.get("routeName"):
+                data["routeName"] = route_doc["routeName"]
 
         # Fetch driverName si se actualizó driver_id
         driver_id = data.get("driver_id")

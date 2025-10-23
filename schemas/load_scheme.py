@@ -4,7 +4,7 @@ def load_helper(load) -> dict:
         "id": str(load["_id"]),
         "firstStopTime": load["firstStopTime"],
         "route_id": load["route_id"],
-        "routeNumber": load.get("routeNumber", ""),
+        "routeName": load.get("routeName", ""),
         "lastStopTime": load["lastStopTime"],
         "landFillTimeIn": load["landFillTimeIn"],
         "landFillTimeOut": load["landFillTimeOut"],

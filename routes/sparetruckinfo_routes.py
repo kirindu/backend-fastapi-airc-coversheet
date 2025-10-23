@@ -15,14 +15,14 @@ async def create_sparetruckinfo(sparetruckinfo: SpareTruckInfoModel):
         data = sparetruckinfo.model_dump()
         coversheet_id = data.pop("coversheet_id")
 
-        # 🔍 Agregar routeNumber a partir del route_id
+        # 🔍 Agregar routeName a partir del route_id
         route_id = data.get("route_id")
         if route_id:
             route_doc = await routes_collection.find_one({"_id": ObjectId(route_id)})
-            if route_doc and route_doc.get("routeNumber"):
-                data["routeNumber"] = route_doc["routeNumber"]
+            if route_doc and route_doc.get("routeName"):
+                data["routeName"] = route_doc["routeName"]
 
-        # 📦 Insertar el nuevo SpareTruckInfo con routeNumber incluido
+        # 📦 Insertar el nuevo SpareTruckInfo con routeName incluido
         new = await sparetruckinfos_collection.insert_one(data)
         created = await sparetruckinfos_collection.find_one({"_id": new.inserted_id})
 
@@ -58,12 +58,12 @@ async def update_sparetruckinfo(id: str, sparetruckinfo: SpareTruckInfoModel):
     try:
         data = sparetruckinfo.model_dump()
 
-        # 🔄 Obtener el nuevo route_id y buscar el routeNumber correspondiente
+        # 🔄 Obtener el nuevo route_id y buscar el routeName correspondiente
         route_id = data.get("route_id")
         if route_id:
             route_doc = await routes_collection.find_one({"_id": ObjectId(route_id)})
-            if route_doc and route_doc.get("routeNumber"):
-                data["routeNumber"] = route_doc["routeNumber"]
+            if route_doc and route_doc.get("routeName"):
+                data["routeName"] = route_doc["routeName"]
 
         # 🛠️ Actualizar el documento
         res = await sparetruckinfos_collection.update_one({"_id": ObjectId(id)},{"$set": data})
