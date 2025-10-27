@@ -22,6 +22,7 @@ async def ping_database():
         print(Fore.RED + f"❌ Failed to connect to MongoDB: {e}")
 
 homebases_collection = database.homebases
+operators_collection = database.operators
 trucks_collection = database.trucks
 trailers_collection = database.trailers
 drivers_collection = database.drivers
