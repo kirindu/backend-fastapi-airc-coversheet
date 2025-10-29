@@ -11,6 +11,9 @@ def coversheet_helper(coversheet) -> dict:
         "endMiles": coversheet["endMiles"],
         "fuel": coversheet["fuel"],
         
+        "dieselExhaustFluid": coversheet["dieselExhaustFluid"],
+        "helper": coversheet["helper"],
+        
         # MULTIPLE RELATIONSHIPS (listas)
         "spareTruckInfo_id": coversheet.get("spareTruckInfo_id", []),
         "downtime_id": coversheet.get("downtime_id", []),
@@ -18,12 +21,14 @@ def coversheet_helper(coversheet) -> dict:
         
          # SINGLE RELATIONSHIPS
         "truck_id": coversheet["truck_id"],
-        "route_id": coversheet["route_id"],
+        "trailer_id": coversheet["trailer_id"],
+        "homebase_id": coversheet["homebase_id"],
         "driver_id": coversheet["driver_id"],
         
         # Additional fields
         "truckNumber": coversheet.get("truckNumber", ""),
-        "routeName": coversheet.get("routeName", ""),
+        "trailerNumber": coversheet.get("trailerNumber", ""),
+        "homeBaseName": coversheet.get("homeBaseName", ""),
         "driverName": coversheet.get("driverName", ""),
         
         # FIELDS

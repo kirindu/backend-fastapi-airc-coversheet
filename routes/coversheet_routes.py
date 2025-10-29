@@ -11,6 +11,8 @@ from schemas.downtime_scheme import downtime_helper
 from schemas.sparetruckinfo_scheme import sparetruckinfo_helper
 from schemas.truck_scheme import truck_helper
 from schemas.route_scheme import route_helper
+from schemas.homebase_scheme import homebase_helper
+from schemas.trailer_scheme import trailer_helper
 from schemas.driver_scheme import driver_helper
 
 from config.database import (
@@ -18,7 +20,8 @@ from config.database import (
     downtimes_collection,
     sparetruckinfos_collection,
     trucks_collection,
-    routes_collection,
+    homebases_collection,
+    trailers_collection,
     drivers_collection
 )
 
@@ -37,8 +40,9 @@ async def expand_related_data(coversheet):
         sparetrucks = [sparetruckinfo_helper(await sparetruckinfos_collection.find_one({"_id": ObjectId(sp_id)}))
                        for sp_id in coversheet.get("spareTruckInfo_id", []) if await sparetruckinfos_collection.find_one({"_id": ObjectId(sp_id)})]
 
+        homebase = await homebases_collection.find_one({"_id": ObjectId(coversheet["homebase_id"])})
         truck = await trucks_collection.find_one({"_id": ObjectId(coversheet["truck_id"])})
-        route = await routes_collection.find_one({"_id": ObjectId(coversheet["route_id"])})
+        trailer = await trailers_collection.find_one({"_id": ObjectId(coversheet["trailer_id"])})
         driver = await drivers_collection.find_one({"_id": ObjectId(coversheet["driver_id"])})
 
         return {
@@ -47,7 +51,8 @@ async def expand_related_data(coversheet):
             "downtimes": downtimes,
             "spareTruckInfos": sparetrucks,
             "truck": truck_helper(truck) if truck else None,
-            "route": route_helper(route) if route else None,
+            "trailer": trailer_helper(trailer) if trailer else None,
+            "homebase": homebase_helper(homebase) if homebase else None,
             "driver": driver_helper(driver) if driver else None
         }
     except Exception as e:
@@ -80,6 +85,13 @@ async def create_coversheet(coversheet: CoversheetModel):
     try:
         data = coversheet.model_dump()
 
+        # Fetch trailerNumber from trailers_collection
+        trailer_id = data.get("trailer_id")
+        if trailer_id:
+            trailer_doc = await trailers_collection.find_one({"_id": ObjectId(trailer_id)})
+            if trailer_doc and trailer_doc.get("trailerNumber"):
+                data["trailerNumber"] = trailer_doc["trailerNumber"]
+                
         # Fetch truckNumber from trucks_collection
         truck_id = data.get("truck_id")
         if truck_id:
@@ -87,12 +99,12 @@ async def create_coversheet(coversheet: CoversheetModel):
             if truck_doc and truck_doc.get("truckNumber"):
                 data["truckNumber"] = truck_doc["truckNumber"]
 
-        # Fetch routeName from routes_collection
-        route_id = data.get("route_id")
-        if route_id:
-            route_doc = await routes_collection.find_one({"_id": ObjectId(route_id)})
-            if route_doc and route_doc.get("routeName"):
-                data["routeName"] = route_doc["routeName"]
+        # Fetch homeBaseName from homebase_collection
+        homebase_id = data.get("homebase_id")
+        if homebase_id:
+            homebase_doc = await homebases_collection.find_one({"_id": ObjectId(homebase_id)})
+            if homebase_doc and homebase_doc.get("homeBaseName"):
+                data["homeBaseName"] = homebase_doc["homeBaseName"]
 
         # Fetch driverName from drivers_collection
         driver_id = data.get("driver_id")
@@ -203,6 +215,13 @@ async def update_coversheet(id: str, coversheet: CoversheetModel):
         # 🔄 Actualizar la fecha de modificación
         from datetime import datetime, timezone
         data["updatedAt"] = datetime.now(timezone.utc)
+        
+        # Fetch trailerNumber si se actualizó trailer_id  
+        trailer_id = data.get("trailer_id")
+        if trailer_id:
+            trailer_doc = await trailers_collection.find_one({"_id": ObjectId(trailer_id)})
+            if trailer_doc and trailer_doc.get("trailerNumber"):
+                data["trailerNumber"] = trailer_doc["trailerNumber"]
 
         # Fetch truckNumber si se actualizó truck_id  
         truck_id = data.get("truck_id")
@@ -211,12 +230,12 @@ async def update_coversheet(id: str, coversheet: CoversheetModel):
             if truck_doc and truck_doc.get("truckNumber"):
                 data["truckNumber"] = truck_doc["truckNumber"]
 
-        # Fetch routeName si se actualizó route_id
-        route_id = data.get("route_id")
-        if route_id:
-            route_doc = await routes_collection.find_one({"_id": ObjectId(route_id)})
-            if route_doc and route_doc.get("routeName"):
-                data["routeName"] = route_doc["routeName"]
+        # Fetch homeBaseName si se actualizó homebase_id
+        homebase_id = data.get("homebase_id")
+        if homebase_id:
+            homebase_doc = await homebases_collection.find_one({"_id": ObjectId(homebase_id)})
+            if homebase_doc and homebase_doc.get("homeBaseName"):
+                data["homeBaseName"] = homebase_doc["homeBaseName"]
 
         # Fetch driverName si se actualizó driver_id
         driver_id = data.get("driver_id")

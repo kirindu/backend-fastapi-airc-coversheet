@@ -14,6 +14,10 @@ class CoversheetModel(BaseModel):
     endMiles: str
     fuel: str
     
+    dieselExhaustFluid: str
+    helper: str
+    
+    
     
     # SPARE TRUCK INFO -RELATIONSHIP
     spareTruckInfo_id: Optional[List[str]] = []
@@ -25,8 +29,11 @@ class CoversheetModel(BaseModel):
     load_id: Optional[List[str]] = []
     
     # ANOTHER RELATIONSHIPS
+    
+    homebase_id: str
     truck_id: str
-    route_id: str
+    trailer_id: str
+    
     driver_id: str
     
     # FIELDS
