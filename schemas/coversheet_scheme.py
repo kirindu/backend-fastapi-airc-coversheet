@@ -1,18 +1,26 @@
 
 def coversheet_helper(coversheet) -> dict:
     return {
-        # TRUCK INFO
+        # GENERAL INFO
         "id": str(coversheet["_id"]),
         "clockIn": coversheet["clockIn"],
-        "leaveYard": coversheet["leaveYard"],
-        "backInYard": coversheet["backInYard"],
         "clockOut": coversheet["clockOut"],
-        "startMiles": coversheet["startMiles"],
-        "endMiles": coversheet["endMiles"],
+        "trainee": coversheet["trainee"],
+        "preTripStart": coversheet["preTripStart"],
+        "preTripEnd": coversheet["preTripEnd"],
+        "postTripStart": coversheet["postTripStart"],
+        "postTripEnd": coversheet["postTripEnd"],
+        "truckStartMiles": coversheet["truckStartMiles"],
+        "truckEndMiles": coversheet["truckEndMiles"],
+        "truckStartHours": coversheet["truckStartHours"],
+        "truckEndHours": coversheet["truckEndHours"],
+        "trailerStartMiles": coversheet["trailerStartMiles"],
+        "trailerEndMiles": coversheet["trailerEndMiles"],
         "fuel": coversheet["fuel"],
-        
         "dieselExhaustFluid": coversheet["dieselExhaustFluid"],
-        "helper": coversheet["helper"],
+
+        "date": coversheet["date"].isoformat() if coversheet.get("date") else None,
+        "notes": coversheet["notes"],
         
         # MULTIPLE RELATIONSHIPS (listas)
         "spareTruckInfo_id": coversheet.get("spareTruckInfo_id", []),
@@ -32,8 +40,7 @@ def coversheet_helper(coversheet) -> dict:
         "driverName": coversheet.get("driverName", ""),
         
         # FIELDS
-        "date": coversheet["date"].isoformat() if coversheet.get("date") else None,
-        "notes": coversheet["notes"],
+
         "createdAt": coversheet["createdAt"].isoformat() if coversheet.get("createdAt") else None,
         "updatedAt": coversheet["updatedAt"].isoformat() if coversheet.get("updatedAt") else None
         
