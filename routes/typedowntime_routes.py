@@ -47,4 +47,4 @@ async def delete_typedowntime(id: str):
     res = await typedowntimes_collection.delete_one({"_id": ObjectId(id)})
     if res.deleted_count:
         return success_response(None, msg="TypeDownTime eliminado")
-    return error_response("TyleLoad no encontrado", status_code=status.HTTP_404_NOT_FOUND)    
+    return error_response("TypeDownTime no encontrado", status_code=status.HTTP_404_NOT_FOUND)    
