@@ -4,6 +4,6 @@ from datetime import datetime, timezone
 from bson import ObjectId
 
 
-class TypeLoadModel(BaseModel):
-    typeLoadName: str
+class TypeDownTimeModel(BaseModel):
+    typeDownTimeName: str
     createdAt: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
