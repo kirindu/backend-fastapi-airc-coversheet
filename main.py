@@ -14,6 +14,7 @@ from routes.route_routes import router as route_router
 from routes.truck_routes import router as truck_router
 from routes.trailer_routes import router as trailer_router
 from routes.homebase_routes import router as homebase_router
+from routes.typeload_routes import router as typeload_router
 from routes.material_routes import router as material_router
 from routes.operator_routes import router as operator_router
 from routes.driver_routes import router as driver_router
@@ -78,6 +79,7 @@ app.include_router(route_router, prefix="/api/routes", tags=["Routes"])
 app.include_router(truck_router, prefix="/api/trucks", tags=["Trucks"])
 app.include_router(trailer_router, prefix="/api/trailers", tags=["Trailers"])
 app.include_router(homebase_router, prefix="/api/homebases", tags=["Homebases"])
+app.include_router(typeload_router, prefix="/api/typeloads", tags=["Typeloads"])
 app.include_router(material_router, prefix="/api/materials", tags=["Materiales"])
 app.include_router(operator_router, prefix="/api/operators", tags=["Operators"])
 app.include_router(driver_router, prefix="/api/drivers", tags=["Drivers"])
