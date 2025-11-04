@@ -9,10 +9,10 @@ class CoversheetModel(BaseModel):
     clockIn: str  
     clockOut: str  
     trainee: str
-    preTripStart: str
-    preTripEnd: str
-    postTripStart: str
-    postTripEnd: str
+    timePreTripStart: str
+    timePreTripEnd: str
+    timePostTripStart: str
+    timePostTripEnd: str
     truckStartMiles: str
     truckEndMiles: str
     truckStartHours: str
