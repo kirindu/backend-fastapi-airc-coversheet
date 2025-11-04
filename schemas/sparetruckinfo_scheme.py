@@ -24,8 +24,8 @@ def sparetruckinfo_helper(sparetruckinfo) -> dict:
     # SINGLE RELATIONSHIPS
     
         "homebase_id": sparetruckinfo["homebase_id"],
-        "truck_id": sparetruckinfo["truck_id"],
-        "trailer_id": sparetruckinfo["trailer_id"],
+        "spareTruckNumberSpareTruckInfo": sparetruckinfo["spareTruckNumberSpareTruckInfo"], # This is a truck ID
+        "spareTrailerNumberSpareTruckInfo": sparetruckinfo["spareTrailerNumberSpareTruckInfo"], # This is a trailer ID
         
          # Additional fields
         "truckNumber": sparetruckinfo.get("truckNumber", ""),

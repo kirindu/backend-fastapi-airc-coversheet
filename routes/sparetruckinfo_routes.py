@@ -25,14 +25,14 @@ async def create_sparetruckinfo(sparetruckinfo: SpareTruckInfoModel):
                 data["homeBaseName"] = homebase_doc["homeBaseName"]
                 
          # Fetch truckNumber from trucks_collection
-        truck_id = data.get("truck_id")
+        truck_id = data.get("spareTruckNumberSpareTruckInfo")
         if truck_id:
             truck_doc = await trucks_collection.find_one({"_id": ObjectId(truck_id)})
             if truck_doc and truck_doc.get("truckNumber"):
                 data["truckNumber"] = truck_doc["truckNumber"]
                 
         # Fetch trailerNumber from trailers_collection
-        trailer_id = data.get("trailer_id")
+        trailer_id = data.get("spareTrailerNumberSpareTruckInfo")
         if trailer_id:
             trailer_doc = await trailers_collection.find_one({"_id": ObjectId(trailer_id)})
             if trailer_doc and trailer_doc.get("trailerNumber"):
@@ -91,14 +91,14 @@ async def update_sparetruckinfo(id: str, sparetruckinfo: SpareTruckInfoModel):
                 data["homeBaseName"] = homebase_doc["homeBaseName"]
                 
         # Fetch truckNumber si se actualizó truck_id  
-        truck_id = data.get("truck_id")
+        truck_id = data.get("spareTruckNumberSpareTruckInfo")
         if truck_id:
             truck_doc = await trucks_collection.find_one({"_id": ObjectId(truck_id)})
             if truck_doc and truck_doc.get("truckNumber"):
                 data["truckNumber"] = truck_doc["truckNumber"]
                 
         # Fetch trailerNumber si se actualizó trailer_id  
-        trailer_id = data.get("trailer_id")
+        trailer_id = data.get("spareTrailerNumberSpareTruckInfo")
         if trailer_id:
             trailer_doc = await trailers_collection.find_one({"_id": ObjectId(trailer_id)})
             if trailer_doc and trailer_doc.get("trailerNumber"):
