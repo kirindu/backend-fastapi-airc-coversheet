@@ -1,7 +1,9 @@
 from fastapi import APIRouter, status
 from models.sparetruckinfo_model import SpareTruckInfoModel
 from config.database import sparetruckinfos_collection
-from config.database import routes_collection 
+from config.database import homebases_collection
+from config.database import trucks_collection
+from config.database import trailers_collection
 from schemas.sparetruckinfo_scheme import sparetruckinfo_helper
 from utils.coversheet_updater import add_entity_to_coversheet
 from utils.response_helper import success_response, error_response
@@ -15,12 +17,27 @@ async def create_sparetruckinfo(sparetruckinfo: SpareTruckInfoModel):
         data = sparetruckinfo.model_dump()
         coversheet_id = data.pop("coversheet_id")
 
-        # 🔍 Agregar routeName a partir del route_id
-        route_id = data.get("route_id")
-        if route_id:
-            route_doc = await routes_collection.find_one({"_id": ObjectId(route_id)})
-            if route_doc and route_doc.get("routeName"):
-                data["routeName"] = route_doc["routeName"]
+        # Fetch homeBaseName from homebase_collection
+        homebase_id = data.get("homebase_id")
+        if homebase_id:
+            homebase_doc = await homebases_collection.find_one({"_id": ObjectId(homebase_id)})
+            if homebase_doc and homebase_doc.get("homeBaseName"):
+                data["homeBaseName"] = homebase_doc["homeBaseName"]
+                
+         # Fetch truckNumber from trucks_collection
+        truck_id = data.get("truck_id")
+        if truck_id:
+            truck_doc = await trucks_collection.find_one({"_id": ObjectId(truck_id)})
+            if truck_doc and truck_doc.get("truckNumber"):
+                data["truckNumber"] = truck_doc["truckNumber"]
+                
+        # Fetch trailerNumber from trailers_collection
+        trailer_id = data.get("trailer_id")
+        if trailer_id:
+            trailer_doc = await trailers_collection.find_one({"_id": ObjectId(trailer_id)})
+            if trailer_doc and trailer_doc.get("trailerNumber"):
+                data["trailerNumber"] = trailer_doc["trailerNumber"]     
+                
 
         # 📦 Insertar el nuevo SpareTruckInfo con routeName incluido
         new = await sparetruckinfos_collection.insert_one(data)
@@ -57,13 +74,36 @@ async def get_sparetruckinfo(id: str):
 async def update_sparetruckinfo(id: str, sparetruckinfo: SpareTruckInfoModel):
     try:
         data = sparetruckinfo.model_dump()
+        
+         # 🔒 Evitar que 'date' sea actualizado
+        if "date" in data:
+            del data["date"]
 
-        # 🔄 Obtener el nuevo route_id y buscar el routeName correspondiente
-        route_id = data.get("route_id")
-        if route_id:
-            route_doc = await routes_collection.find_one({"_id": ObjectId(route_id)})
-            if route_doc and route_doc.get("routeName"):
-                data["routeName"] = route_doc["routeName"]
+        # 🔄 Actualizar la fecha de modificación
+        from datetime import datetime, timezone
+        data["updatedAt"] = datetime.now(timezone.utc)
+        
+        # Fetch homeBaseName si se actualizó homebase_id
+        homebase_id = data.get("homebase_id")
+        if homebase_id:
+            homebase_doc = await homebases_collection.find_one({"_id": ObjectId(homebase_id)})
+            if homebase_doc and homebase_doc.get("homeBaseName"):
+                data["homeBaseName"] = homebase_doc["homeBaseName"]
+                
+        # Fetch truckNumber si se actualizó truck_id  
+        truck_id = data.get("truck_id")
+        if truck_id:
+            truck_doc = await trucks_collection.find_one({"_id": ObjectId(truck_id)})
+            if truck_doc and truck_doc.get("truckNumber"):
+                data["truckNumber"] = truck_doc["truckNumber"]
+                
+        # Fetch trailerNumber si se actualizó trailer_id  
+        trailer_id = data.get("trailer_id")
+        if trailer_id:
+            trailer_doc = await trailers_collection.find_one({"_id": ObjectId(trailer_id)})
+            if trailer_doc and trailer_doc.get("trailerNumber"):
+                data["trailerNumber"] = trailer_doc["trailerNumber"]
+        
 
         # 🛠️ Actualizar el documento
         res = await sparetruckinfos_collection.update_one({"_id": ObjectId(id)},{"$set": data})
@@ -78,16 +118,6 @@ async def update_sparetruckinfo(id: str, sparetruckinfo: SpareTruckInfoModel):
         return error_response(f"Error al actualizar SpareTruckInfo: {str(e)}")
 
 
-# @router.put("/{id}")
-# async def update_sparetruckinfo(id: str, sparetruckinfo: SpareTruckInfoModel):
-#     try:
-#         res = await sparetruckinfos_collection.update_one({"_id": ObjectId(id)}, {"$set": sparetruckinfo.model_dump()})
-#         if res.matched_count == 0:
-#             return error_response("SpareTruckInfo no encontrado", status_code=status.HTTP_404_NOT_FOUND)
-#         updated = await sparetruckinfos_collection.find_one({"_id": ObjectId(id)})
-#         return success_response(sparetruckinfo_helper(updated), msg="SpareTruckInfo actualizado")
-#     except Exception as e:
-#         return error_response(f"Error al actualizar SpareTruckInfo: {str(e)}")
 
 @router.delete("/{id}")
 async def delete_sparetruckinfo(id: str):

@@ -39,7 +39,7 @@ def coversheet_helper(coversheet) -> dict:
         "homeBaseName": coversheet.get("homeBaseName", ""),
         "driverName": coversheet.get("driverName", ""),
         
-        # FIELDS
+        # AUDIT FIELDS
 
         "createdAt": coversheet["createdAt"].isoformat() if coversheet.get("createdAt") else None,
         "updatedAt": coversheet["updatedAt"].isoformat() if coversheet.get("updatedAt") else None
