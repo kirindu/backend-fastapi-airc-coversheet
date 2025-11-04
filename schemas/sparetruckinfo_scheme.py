@@ -6,7 +6,7 @@ def sparetruckinfo_helper(sparetruckinfo) -> dict:
         
         "id": str(sparetruckinfo["_id"]),
         "timeLeaveYardSpareTruckInfo": sparetruckinfo["timeLeaveYardSpareTruckInfo"],
-        "timeBackInYardSpareTruckInfo": sparetruckinfo["route_id"],
+        "timeBackInYardSpareTruckInfo": sparetruckinfo["timeBackInYardSpareTruckInfo"],
         "fuelSpareTruckInfo": sparetruckinfo["fuelSpareTruckInfo"],
         "dieselExhaustFluidSpareTruckInfo": sparetruckinfo["dieselExhaustFluidSpareTruckInfo"],
         
