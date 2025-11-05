@@ -25,7 +25,7 @@ class SpareTruckInfoModel(BaseModel):
     trailerEndMilesSpareTruckInfo: str
     
     # RELATIONSHIP
-    coversheet_id: str
+    coversheet_id: Optional[str]= None # Esto se hace opcional porque a la hora actualizar el spare no se necesita este campo.
     
     
     # ANOTHER RELATIONSHIPS
