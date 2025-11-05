@@ -14,19 +14,21 @@ class SpareTruckInfoModel(BaseModel):
     fuelSpareTruckInfo: str
     dieselExhaustFluidSpareTruckInfo: str
     
-    spareTruckNumberSpareTruckInfo: Optional[str]= None
-    truckStartMilesSpareTruckInfo: Optional[str]= None
-    truckEndMilesSpareTruckInfo: Optional[str]= None
-    truckStartHoursSpareTruckInfo: Optional[str]= None
-    truckEndHoursSpareTruckInfo: Optional[str]= None
     
-    spareTrailerNumberSpareTruckInfo: Optional[str]= None
-    trailerStartMilesSpareTruckInfo: Optional[str]= None
-    trailerEndMilesSpareTruckInfo: Optional[str]= None
+    truckStartMilesSpareTruckInfo: str
+    truckEndMilesSpareTruckInfo: str
+    truckStartHoursSpareTruckInfo: str
+    truckEndHoursSpareTruckInfo: str
+    
+    
+    trailerStartMilesSpareTruckInfo: str
+    trailerEndMilesSpareTruckInfo: str
     
     # RELATIONSHIP
-    coversheet_id: Optional[str]= None
+    coversheet_id: str
     
     
-    # OTHER FIELDS
+    # ANOTHER RELATIONSHIPS
     homebase_id: str
+    truck_id: str
+    trailer_id: str
