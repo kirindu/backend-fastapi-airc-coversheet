@@ -84,17 +84,17 @@ async def get_downtime(id: str):
 @router.put("/{id}")
 async def update_downtime(id: str, downtime: DowntimeModel):
     try:
-        data = downtime.model_dump()
-        
-        # 🔒 Evitar que 'date' sea actualizado
-        if "date" in data:
-            del data["date"]
+        # Convertimos el modelo a dict
+        data = downtime.model_dump(exclude_unset=True)  # ¡CLAVE! Solo campos enviados
+
+        # 🔒 Proteger createdAt: eliminarlo si está presente
+        data.pop("createdAt", None)
 
         # 🔄 Actualizar la fecha de modificación
         from datetime import datetime, timezone
         data["updatedAt"] = datetime.now(timezone.utc)
-        
 
+        # --- Resto del código igual (truckNumber, etc.) ---
 
         # 🔄 Fetch truckNumber from trucks_collection
         truck_id = data.get("truck_id")
@@ -110,34 +110,34 @@ async def update_downtime(id: str, downtime: DowntimeModel):
             if trailer_doc and trailer_doc.get("trailerNumber"):
                 data["trailerNumber"] = trailer_doc["trailerNumber"] 
                 
-        # 🔄 Fetch Truck typeDownTimeName from trailers_collection
+        # 🔄 Fetch Truck typeDownTimeName
         typeTruckDownTime_id = data.get("typeTruckDownTime_id")
         if typeTruckDownTime_id:
             typeTruckDownTime_doc = await typedowntimes_collection.find_one({"_id": ObjectId(typeTruckDownTime_id)})
             if typeTruckDownTime_doc and typeTruckDownTime_doc.get("typeDownTimeName"):
                 data["typeDownTimeName"] = typeTruckDownTime_doc["typeDownTimeName"]       
                 
-        # 🔄 Fetch Trailer typeDownTimeName from trailers_collection
+        # 🔄 Fetch Trailer typeDownTimeName
         typeTrailerDownTime_id = data.get("typeTrailerDownTime_id")
         if typeTrailerDownTime_id:
             typeTrailerDownTime_doc = await typedowntimes_collection.find_one({"_id": ObjectId(typeTrailerDownTime_id)})
             if typeTrailerDownTime_doc and typeTrailerDownTime_doc.get("typeDownTimeName"):
                 data["typeDownTimeName"] = typeTrailerDownTime_doc["typeDownTimeName"]   
 
-
-
-
         # 🛠️ Actualizar el documento
-        res = await downtimes_collection.update_one({"_id": ObjectId(id)},{"$set": data})
+        res = await downtimes_collection.update_one(
+            {"_id": ObjectId(id)},
+            {"$set": data}
+        )
 
         if res.matched_count == 0:
             return error_response("Downtime no encontrada", status_code=status.HTTP_404_NOT_FOUND)
 
         updated = await downtimes_collection.find_one({"_id": ObjectId(id)})
         return success_response(downtime_helper(updated), msg="Downtime actualizada")
+    
     except Exception as e:
         return error_response(f"Error al actualizar downtime: {str(e)}")
-    
 
 
 @router.delete("/{id}")
