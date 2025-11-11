@@ -23,3 +23,7 @@ class DowntimeModel(BaseModel):
  
     typeTruckDownTime_id: Optional[str]= None
     typeTrailerDownTime_id: Optional[str]= None
+    
+        # OTHER FIELDS
+    createdAt: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updatedAt: Optional[datetime] = None
