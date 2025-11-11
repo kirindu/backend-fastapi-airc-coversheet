@@ -59,10 +59,6 @@ async def create_downtime(downtime: DowntimeModel):
         return error_response(f"Error al crear downtime: {str(e)}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
-
-
-
 @router.get("/")
 async def get_all_downtimes():
     try:

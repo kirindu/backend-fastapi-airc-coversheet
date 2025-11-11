@@ -73,11 +73,10 @@ async def get_sparetruckinfo(id: str):
 @router.put("/{id}")
 async def update_sparetruckinfo(id: str, sparetruckinfo: SpareTruckInfoModel):
     try:
-        data = sparetruckinfo.model_dump()
+        data = sparetruckinfo.model_dump(exclude_unset=True)  # ¡CLAVE! Solo campos enviados
         
-         # 🔒 Evitar que 'date' sea actualizado
-        if "date" in data:
-            del data["date"]
+         # 🔒 Proteger createdAt: eliminarlo si está presente
+        data.pop("createdAt", None)
 
         # 🔄 Actualizar la fecha de modificación
         from datetime import datetime, timezone

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, EmailStr
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
 from datetime import datetime
 
@@ -32,3 +32,7 @@ class SpareTruckInfoModel(BaseModel):
     homebase_id: str
     truck_id: str
     trailer_id: str
+    
+    # OTHER FIELDS
+    createdAt: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updatedAt: Optional[datetime] = None
