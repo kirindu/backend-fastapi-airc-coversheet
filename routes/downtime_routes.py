@@ -2,6 +2,8 @@ from fastapi import APIRouter, status
 from models.downtime_model import DowntimeModel
 from config.database import downtimes_collection
 from config.database import trucks_collection 
+from config.database import trailers_collection
+from config.database import typedowntimes_collection
 from schemas.downtime_scheme import downtime_helper
 from utils.coversheet_updater import add_entity_to_coversheet
 from utils.response_helper import success_response, error_response
@@ -16,16 +18,40 @@ async def create_downtime(downtime: DowntimeModel):
         data = downtime.model_dump()
         coversheet_id = data.pop("coversheet_id")
         
-         # 🔍 Agregar truckNumber a partir del route_id
+        # Fetch truckNumber from trucks_collection
         truck_id = data.get("truck_id")
         if truck_id:
             truck_doc = await trucks_collection.find_one({"_id": ObjectId(truck_id)})
             if truck_doc and truck_doc.get("truckNumber"):
                 data["truckNumber"] = truck_doc["truckNumber"]
+                
+        # Fetch trailerNumber from trailers_collection
+        trailer_id = data.get("trailer_id")
+        if trailer_id:
+            trailer_doc = await trailers_collection.find_one({"_id": ObjectId(trailer_id)})
+            if trailer_doc and trailer_doc.get("trailerNumber"):
+                data["trailerNumber"] = trailer_doc["trailerNumber"] 
+                
+        # Fetch Truck typeDownTimeName from trailers_collection
+        typeTruckDownTime_id = data.get("typeTruckDownTime_id")
+        if typeTruckDownTime_id:
+            typeTruckDownTime_doc = await typedowntimes_collection.find_one({"_id": ObjectId(typeTruckDownTime_id)})
+            if typeTruckDownTime_doc and typeTruckDownTime_doc.get("typeDownTimeName"):
+                data["typeDownTimeName"] = typeTruckDownTime_doc["typeDownTimeName"]       
+                
+        # Fetch Trailer typeDownTimeName from trailers_collection
+        typeTrailerDownTime_id = data.get("typeTrailerDownTime_id")
+        if typeTrailerDownTime_id:
+            typeTrailerDownTime_doc = await typedowntimes_collection.find_one({"_id": ObjectId(typeTrailerDownTime_id)})
+            if typeTrailerDownTime_doc and typeTrailerDownTime_doc.get("typeDownTimeName"):
+                data["typeDownTimeName"] = typeTrailerDownTime_doc["typeDownTimeName"]   
+                
+        # 📦 Insertar el nuevo Downtime 
 
         new = await downtimes_collection.insert_one(data)
         created = await downtimes_collection.find_one({"_id": new.inserted_id})
 
+        # 🔗 Asociar con coversheet
         await add_entity_to_coversheet(coversheet_id, "downtime_id", str(new.inserted_id))
 
         return success_response(downtime_helper(created), msg="Downtime creada exitosamente")
@@ -59,13 +85,47 @@ async def get_downtime(id: str):
 async def update_downtime(id: str, downtime: DowntimeModel):
     try:
         data = downtime.model_dump()
+        
+        # 🔒 Evitar que 'date' sea actualizado
+        if "date" in data:
+            del data["date"]
 
-        # 🔄 Obtener el nuevo truck_id y buscar el truckNumber correspondiente
+        # 🔄 Actualizar la fecha de modificación
+        from datetime import datetime, timezone
+        data["updatedAt"] = datetime.now(timezone.utc)
+        
+
+
+        # 🔄 Fetch truckNumber from trucks_collection
         truck_id = data.get("truck_id")
         if truck_id:
             truck_doc = await trucks_collection.find_one({"_id": ObjectId(truck_id)})
             if truck_doc and truck_doc.get("truckNumber"):
                 data["truckNumber"] = truck_doc["truckNumber"]
+                
+        # 🔄 Fetch trailerNumber from trailers_collection
+        trailer_id = data.get("trailer_id")
+        if trailer_id:
+            trailer_doc = await trailers_collection.find_one({"_id": ObjectId(trailer_id)})
+            if trailer_doc and trailer_doc.get("trailerNumber"):
+                data["trailerNumber"] = trailer_doc["trailerNumber"] 
+                
+        # 🔄 Fetch Truck typeDownTimeName from trailers_collection
+        typeTruckDownTime_id = data.get("typeTruckDownTime_id")
+        if typeTruckDownTime_id:
+            typeTruckDownTime_doc = await typedowntimes_collection.find_one({"_id": ObjectId(typeTruckDownTime_id)})
+            if typeTruckDownTime_doc and typeTruckDownTime_doc.get("typeDownTimeName"):
+                data["typeDownTimeName"] = typeTruckDownTime_doc["typeDownTimeName"]       
+                
+        # 🔄 Fetch Trailer typeDownTimeName from trailers_collection
+        typeTrailerDownTime_id = data.get("typeTrailerDownTime_id")
+        if typeTrailerDownTime_id:
+            typeTrailerDownTime_doc = await typedowntimes_collection.find_one({"_id": ObjectId(typeTrailerDownTime_id)})
+            if typeTrailerDownTime_doc and typeTrailerDownTime_doc.get("typeDownTimeName"):
+                data["typeDownTimeName"] = typeTrailerDownTime_doc["typeDownTimeName"]   
+
+
+
 
         # 🛠️ Actualizar el documento
         res = await downtimes_collection.update_one({"_id": ObjectId(id)},{"$set": data})
@@ -79,16 +139,6 @@ async def update_downtime(id: str, downtime: DowntimeModel):
         return error_response(f"Error al actualizar downtime: {str(e)}")
     
 
-# @router.put("/{id}")
-# async def update_downtime(id: str, downtime: DowntimeModel):
-#     try:
-#         res = await downtimes_collection.update_one({"_id": ObjectId(id)}, {"$set": downtime.model_dump()})
-#         if res.matched_count == 0:
-#             return error_response("Downtime no encontrada", status_code=status.HTTP_404_NOT_FOUND)
-#         updated = await downtimes_collection.find_one({"_id": ObjectId(id)})
-#         return success_response(downtime_helper(updated), msg="Downtime actualizada")
-#     except Exception as e:
-#         return error_response(f"Error al actualizar downtime: {str(e)}")
 
 @router.delete("/{id}")
 async def delete_downtime(id: str):
