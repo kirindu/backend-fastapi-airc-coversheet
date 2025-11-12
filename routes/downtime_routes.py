@@ -37,14 +37,14 @@ async def create_downtime(downtime: DowntimeModel):
         if typeTruckDownTime_id:
             typeTruckDownTime_doc = await typedowntimes_collection.find_one({"_id": ObjectId(typeTruckDownTime_id)})
             if typeTruckDownTime_doc and typeTruckDownTime_doc.get("typeDownTimeName"):
-                data["typeDownTimeName"] = typeTruckDownTime_doc["typeDownTimeName"]       
+                data["typeTruckDownTimeName"] = typeTruckDownTime_doc["typeDownTimeName"]       
                 
         # Fetch Trailer typeDownTimeName from trailers_collection
         typeTrailerDownTime_id = data.get("typeTrailerDownTime_id")
         if typeTrailerDownTime_id:
             typeTrailerDownTime_doc = await typedowntimes_collection.find_one({"_id": ObjectId(typeTrailerDownTime_id)})
             if typeTrailerDownTime_doc and typeTrailerDownTime_doc.get("typeDownTimeName"):
-                data["typeDownTimeName"] = typeTrailerDownTime_doc["typeDownTimeName"]   
+                data["typeTrailerDownTimeName"] = typeTrailerDownTime_doc["typeDownTimeName"]   
                 
         # 📦 Insertar el nuevo Downtime 
 

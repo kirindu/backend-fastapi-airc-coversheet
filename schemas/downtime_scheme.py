@@ -19,8 +19,8 @@ def downtime_helper(downtime) -> dict:
         
         "truckNumber": downtime.get("truckNumber", ""),
         "trailerNumber": downtime.get("trailerNumber", ""),
-        "typeTruckDownTimeName": downtime.get("typeDownTimeName", ""),
-        "typeTrailerDownTimeName": downtime.get("typeDownTimeName", ""),
+        "typeTruckDownTimeName": downtime.get("typeTruckDownTimeName", ""),
+        "typeTrailerDownTimeName": downtime.get("typeTrailerDownTimeName", ""),
         
         # AUDIT FIELDS
         
