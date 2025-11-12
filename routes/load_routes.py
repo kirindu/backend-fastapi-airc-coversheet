@@ -117,14 +117,23 @@ async def create_load_with_images(
                 return error_response(f"Error al buscar operatorName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
 
 # 🔍 Obtener Source
-        if operator_id:
+        if source_id:
             try:
-                operator_doc = await operators_collection.find_one({"_id": ObjectId(operator_id)})
-                if operator_doc and operator_doc.get("operatorName"):
-                    data["operatorName"] = operator_doc["operatorName"]
+                source_doc = await sources_collection.find_one({"_id": ObjectId(source_id)})
+                if source_doc and source_doc.get("sourceName"):
+                    data["sourceName"] = source_doc["sourceName"]
             except Exception as lookup_error:
-                return error_response(f"Error al buscar operatorName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
+                return error_response(f"Error al buscar sourceName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
 
+
+# 🔍 Obtener Destionation
+        if destination_id:
+            try:
+                destination_doc = await destinations_collection.find_one({"_id": ObjectId(destination_id)})
+                if destination_doc and destination_doc.get("destinationName"):
+                    data["destinationName"] = destination_doc["destinationName"]
+            except Exception as lookup_error:
+                return error_response(f"Error al buscar destinationName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
 
 
         new = await loads_collection.insert_one(data)
@@ -138,18 +147,26 @@ async def create_load_with_images(
 @router.put("/{id}")
 async def update_load_with_form(
     id: str,
-    firstStopTime: Optional[str] = Form(None),
-    route_id: Optional[str] = Form(None),
-    lastStopTime: Optional[str] = Form(None),
-    landFillTimeIn: Optional[str] = Form(None),
-    landFillTimeOut: Optional[str] = Form(None),
-    grossWeight: Optional[float] = Form(None),
-    tareWeight: Optional[float] = Form(None),
-    tons: Optional[float] = Form(None),
-    landFill_id: Optional[str] = Form(None),
-    ticketNumber: Optional[str] = Form(None),
+    tunnelTimeInLoad: Optional[str] = Form(None),
+    tunnelTimeOutLoad: Optional[str] = Form(None),
+    leaveYardLoad: Optional[str] = Form(None),
+    timeInLoad: Optional[str] = Form(None),
+    timeOutLoad: Optional[str] = Form(None),
+    ticketNumberLoad: Optional[str] = Form(None),
+    grossWeightLoad: Optional[str] = Form(None),
+    tareWeightLoad: Optional[str] = Form(None),
+    tonsLoad: Optional[str] = Form(None),
+    backYardLoad: Optional[str] = Form(None),
+    images: List[UploadFile] = File(default=None), # Cambiar default=[] a default=None para manejar mejor la ausencia de imágenes
     note: Optional[str] = Form(None),
-    images: List[UploadFile] = File(default=None)
+    preloadedLoad: Optional[bool] = Form(False),
+    preloadedNextDayLoad: Optional[bool] = Form(False),
+    
+    homebase_id: Optional[str] = Form(None),
+    operator_id: Optional[str] = Form(None),
+    source_id: Optional[str] = Form(None),
+    destination_id: Optional[str] = Form(None),
+    material_id: Optional[str] = Form(None),
 ):
     try:
         existing = await loads_collection.find_one({"_id": ObjectId(id)})
@@ -182,47 +199,65 @@ async def update_load_with_form(
                 image_paths.append(file_path)
 
         data = {
-            "firstStopTime": firstStopTime,
-            "route_id": route_id,
-            "lastStopTime": lastStopTime,
-            "landFillTimeIn": landFillTimeIn,
-            "landFillTimeOut": landFillTimeOut,
-            "grossWeight": grossWeight,
-            "tareWeight": tareWeight,
-            "tons": tons,
-            "landFill_id": landFill_id,
-            "ticketNumber": ticketNumber,
+            "tunnelTimeInLoad": tunnelTimeInLoad,
+            "tunnelTimeOutLoad": tunnelTimeOutLoad,
+            "leaveYardLoad": leaveYardLoad,
+            "timeInLoad": timeInLoad,
+            "timeOutLoad": timeOutLoad,
+            "ticketNumberLoad": ticketNumberLoad,
+            "grossWeightLoad": grossWeightLoad,
+            "tareWeightLoad": tareWeightLoad,
+            "tonsLoad": tonsLoad,
+            "backYardLoad": backYardLoad,
+            "preloadedLoad": preloadedLoad,
+            "preloadedNextDayLoad": preloadedNextDayLoad,
             "note": note,
+            
+            "homebase_id": homebase_id,
+            "operator_id": operator_id,
+            "source_id": source_id,
+            "destination_id": destination_id,
+            "material_id": material_id,
             "images": image_paths
         }
         
-        # 🔍 Obtener routeName si hay route_id
-        if route_id:
+    # 🔍 Obtener homeBaseName
+        if homebase_id:
             try:
-                route_doc = await routes_collection.find_one({"_id": ObjectId(route_id)})
-                if route_doc and route_doc.get("routeName"):
-                    data["routeName"] = route_doc["routeName"]
+                homebase_doc = await homebases_collection.find_one({"_id": ObjectId(homebase_id)})
+                if homebase_doc and homebase_doc.get("homeBaseName"):
+                    data["homeBaseName"] = homebase_doc["homeBaseName"]
             except Exception as lookup_error:
-                return error_response(f"Error al buscar routeName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
-
-        
-# 🔍 Obtener landfillName si hay landfill_id
-        if landFill_id:
-            try:
-                landfill_doc = await landfills_collection.find_one({"_id": ObjectId(landFill_id)})
-                if landfill_doc and landfill_doc.get("landfillName"):
-                    data["landfillName"] = landfill_doc["landfillName"]
-            except Exception as lookup_error:
-                return error_response(f"Error al buscar landfillName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
+                return error_response(f"Error al buscar homeBaseName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
             
-            # 🔍 Obtener landfillName si hay landfill_id
-        if landFill_id:
+            
+    # 🔍 Obtener Operador
+        if operator_id:
             try:
-                landfill_doc = await landfills_collection.find_one({"_id": ObjectId(landFill_id)})
-                if landfill_doc and landfill_doc.get("landfillName"):
-                    data["landfillName"] = landfill_doc["landfillName"]
+                operator_doc = await operators_collection.find_one({"_id": ObjectId(operator_id)})
+                if operator_doc and operator_doc.get("operatorName"):
+                    data["operatorName"] = operator_doc["operatorName"]
             except Exception as lookup_error:
-                return error_response(f"Error al buscar landfillName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
+                return error_response(f"Error al buscar operatorName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
+
+    # 🔍 Obtener Source
+        if source_id:
+            try:
+                source_doc = await sources_collection.find_one({"_id": ObjectId(source_id)})
+                if source_doc and source_doc.get("sourceName"):
+                    data["sourceName"] = source_doc["sourceName"]
+            except Exception as lookup_error:
+                return error_response(f"Error al buscar sourceName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
+
+
+    # 🔍 Obtener Destionation
+        if destination_id:
+            try:
+                destination_doc = await destinations_collection.find_one({"_id": ObjectId(destination_id)})
+                if destination_doc and destination_doc.get("destinationName"):
+                    data["destinationName"] = destination_doc["destinationName"]
+            except Exception as lookup_error:
+                return error_response(f"Error al buscar destinationName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
 
 
         res = await loads_collection.update_one({"_id": ObjectId(id)}, {"$set": data})
