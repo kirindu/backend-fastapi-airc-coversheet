@@ -16,6 +16,8 @@ from routes.trailer_routes import router as trailer_router
 from routes.homebase_routes import router as homebase_router
 from routes.typedowntime_routes import router as typedowntime_router
 from routes.material_routes import router as material_router
+from routes.destination_routes import router as destination_router
+from routes.source_routes import router as source_router
 from routes.operator_routes import router as operator_router
 from routes.driver_routes import router as driver_router
 from routes.landfill_routes import router as landfill_router
@@ -81,6 +83,8 @@ app.include_router(trailer_router, prefix="/api/trailers", tags=["Trailers"])
 app.include_router(homebase_router, prefix="/api/homebases", tags=["Homebases"])
 app.include_router(typedowntime_router, prefix="/api/typedowntimes", tags=["TypeDowntimes"])
 app.include_router(material_router, prefix="/api/materials", tags=["Materiales"])
+app.include_router(source_router, prefix="/api/sources", tags=["Sources"])
+app.include_router(destination_router, prefix="/api/destinations", tags=["Destination"])
 app.include_router(operator_router, prefix="/api/operators", tags=["Operators"])
 app.include_router(driver_router, prefix="/api/drivers", tags=["Drivers"])
 app.include_router(landfill_router, prefix="/api/landfills", tags=["Landfills"])

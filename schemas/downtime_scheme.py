@@ -15,7 +15,7 @@ def downtime_helper(downtime) -> dict:
         "typeTruckDownTime_id": downtime.get("typeTruckDownTime_id", ""),
         "typeTrailerDownTime_id": downtime.get("typeTrailerDownTime_id", ""),
         
-        # Additional fields
+        # ADDITIONAL FIELDS
         
         "truckNumber": downtime.get("truckNumber", ""),
         "trailerNumber": downtime.get("trailerNumber", ""),

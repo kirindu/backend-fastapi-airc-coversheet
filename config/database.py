@@ -32,6 +32,9 @@ landfills_collection = database.landfills
 users_collection = database.users
 routes_collection = database.routes
 
+sources_collection = database.sources
+destinations_collection = database.destinations
+
 sparetruckinfos_collection = database.sparetruckinfo
 downtimes_collection = database.downtime
 loads_collection = database.load

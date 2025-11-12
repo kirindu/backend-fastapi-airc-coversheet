@@ -3,6 +3,12 @@ from models.load_model import LoadModel
 from config.database import loads_collection
 from config.database import routes_collection
 from config.database import landfills_collection  
+from config.database import sources_collection
+from config.database import destinations_collection
+from config.database import homebases_collection
+from config.database import materials_collection
+from config.database import operators_collection
+
 from schemas.load_scheme import load_helper
 from utils.coversheet_updater import add_entity_to_coversheet
 from utils.response_helper import success_response, error_response
@@ -16,19 +22,31 @@ router = APIRouter()
 
 @router.post("/")
 async def create_load_with_images(
-    firstStopTime: Optional[str] = Form(None),
-    route_id: Optional[str] = Form(None),
-    lastStopTime: Optional[str] = Form(None),
-    landFillTimeIn: Optional[str] = Form(None),
-    landFillTimeOut: Optional[str] = Form(None),
-    grossWeight: Optional[float] = Form(None),
-    tareWeight: Optional[float] = Form(None),
-    tons: Optional[float] = Form(None),
-    landFill_id: Optional[str] = Form(None),
-    ticketNumber: Optional[str] = Form(None),
+    
+    tunnelTimeInLoad: Optional[str] = Form(None),
+    tunnelTimeOutLoad: Optional[str] = Form(None),
+    leaveYardLoad: Optional[str] = Form(None),
+    timeInLoad: Optional[str] = Form(None),
+    timeOutLoad: Optional[str] = Form(None),
+    ticketNumberLoad: Optional[str] = Form(None),
+    grossWeightLoad: Optional[str] = Form(None),
+    tareWeightLoad: Optional[str] = Form(None),
+    tonsLoad: Optional[str] = Form(None),
+    backYardLoad: Optional[str] = Form(None),
+    images: List[UploadFile] = File(default=None), # Cambiar default=[] a default=None para manejar mejor la ausencia de imágenes
     note: Optional[str] = Form(None),
+    preloadedLoad: Optional[bool] = Form(False),
+    preloadedNextDayLoad: Optional[bool] = Form(False),
+    
+    homebase_id: Optional[str] = Form(None),
+    operator_id: Optional[str] = Form(None),
+    source_id: Optional[str] = Form(None),
+    destination_id: Optional[str] = Form(None),
+    material_id: Optional[str] = Form(None),
     coversheet_id: str = Form(...),
-    images: List[UploadFile] = File(default=None)  # Cambiar default=[] a default=None para manejar mejor la ausencia de imágenes
+    
+    
+
 ):
     try:
         image_paths = []
@@ -57,38 +75,56 @@ async def create_load_with_images(
                 image_paths.append(file_path)
 
         data = {
-            "firstStopTime": firstStopTime,
-            "route_id": route_id,
-            "lastStopTime": lastStopTime,
-            "landFillTimeIn": landFillTimeIn,
-            "landFillTimeOut": landFillTimeOut,
-            "grossWeight": grossWeight,
-            "tareWeight": tareWeight,
-            "tons": tons,
-            "landFill_id": landFill_id,
-            "ticketNumber": ticketNumber,
+            "tunnelTimeInLoad": tunnelTimeInLoad,
+            "tunnelTimeOutLoad": tunnelTimeOutLoad,
+            "leaveYardLoad": leaveYardLoad,
+            "timeInLoad": timeInLoad,
+            "timeOutLoad": timeOutLoad,
+            "ticketNumberLoad": ticketNumberLoad,
+            "grossWeightLoad": grossWeightLoad,
+            "tareWeightLoad": tareWeightLoad,
+            "tonsLoad": tonsLoad,
+            "backYardLoad": backYardLoad,
+            "preloadedLoad": preloadedLoad,
+            "preloadedNextDayLoad": preloadedNextDayLoad,
             "note": note,
-            "images": image_paths if image_paths else []  # Asegurar que 'images' siempre sea una lista
+            "images": image_paths if image_paths else [],  # Asegurar que 'images' siempre sea una lista     
+            
+            "homebase_id": homebase_id,
+            "operator_id": operator_id,
+            "source_id": source_id,
+            "destination_id": destination_id,
+            "material_id": material_id,
         }
         
-# 🔍 Obtener routeName si hay route_id
-        if route_id:
+# 🔍 Obtener homeBaseName
+        if homebase_id:
             try:
-                route_doc = await routes_collection.find_one({"_id": ObjectId(route_id)})
-                if route_doc and route_doc.get("routeName"):
-                    data["routeName"] = route_doc["routeName"]
+                homebase_doc = await homebases_collection.find_one({"_id": ObjectId(homebase_id)})
+                if homebase_doc and homebase_doc.get("homeBaseName"):
+                    data["homeBaseName"] = homebase_doc["homeBaseName"]
             except Exception as lookup_error:
-                return error_response(f"Error al buscar route Name: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
+                return error_response(f"Error al buscar homeBaseName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
             
             
-# 🔍 Obtener landfillName si hay landfill_id
-        if landFill_id:
+# 🔍 Obtener Operador
+        if operator_id:
             try:
-                landfill_doc = await landfills_collection.find_one({"_id": ObjectId(landFill_id)})
-                if landfill_doc and landfill_doc.get("landfillName"):
-                    data["landfillName"] = landfill_doc["landfillName"]
+                operator_doc = await operators_collection.find_one({"_id": ObjectId(operator_id)})
+                if operator_doc and operator_doc.get("operatorName"):
+                    data["operatorName"] = operator_doc["operatorName"]
             except Exception as lookup_error:
-                return error_response(f"Error al buscar landfillName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
+                return error_response(f"Error al buscar operatorName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
+
+# 🔍 Obtener Source
+        if operator_id:
+            try:
+                operator_doc = await operators_collection.find_one({"_id": ObjectId(operator_id)})
+                if operator_doc and operator_doc.get("operatorName"):
+                    data["operatorName"] = operator_doc["operatorName"]
+            except Exception as lookup_error:
+                return error_response(f"Error al buscar operatorName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
+
 
 
         new = await loads_collection.insert_one(data)
