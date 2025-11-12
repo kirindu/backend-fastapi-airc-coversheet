@@ -106,19 +106,19 @@ async def update_downtime(id: str, downtime: DowntimeModel):
             if trailer_doc and trailer_doc.get("trailerNumber"):
                 data["trailerNumber"] = trailer_doc["trailerNumber"] 
                 
-        # 🔄 Fetch Truck typeDownTimeName
+        # 🔄 Fetch Truck typeDownTimeName from trailers_collection
         typeTruckDownTime_id = data.get("typeTruckDownTime_id")
         if typeTruckDownTime_id:
             typeTruckDownTime_doc = await typedowntimes_collection.find_one({"_id": ObjectId(typeTruckDownTime_id)})
             if typeTruckDownTime_doc and typeTruckDownTime_doc.get("typeDownTimeName"):
-                data["typeDownTimeName"] = typeTruckDownTime_doc["typeDownTimeName"]       
+                data["typeTruckDownTimeName"] = typeTruckDownTime_doc["typeDownTimeName"]       
                 
-        # 🔄 Fetch Trailer typeDownTimeName
+        # 🔄 Fetch Trailer typeDownTimeName from trailers_collection
         typeTrailerDownTime_id = data.get("typeTrailerDownTime_id")
         if typeTrailerDownTime_id:
             typeTrailerDownTime_doc = await typedowntimes_collection.find_one({"_id": ObjectId(typeTrailerDownTime_id)})
             if typeTrailerDownTime_doc and typeTrailerDownTime_doc.get("typeDownTimeName"):
-                data["typeDownTimeName"] = typeTrailerDownTime_doc["typeDownTimeName"]   
+                data["typeTrailerDownTimeName"] = typeTrailerDownTime_doc["typeDownTimeName"]   
 
         # 🛠️ Actualizar el documento
         res = await downtimes_collection.update_one(
