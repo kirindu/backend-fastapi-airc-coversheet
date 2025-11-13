@@ -138,6 +138,15 @@ async def create_load_with_images(
                     data["destinationName"] = destination_doc["destinationName"]
             except Exception as lookup_error:
                 return error_response(f"Error al buscar destinationName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
+            
+# 🔍 Obtener Material
+        if material_id:
+            try:
+                material_doc = await materials_collection.find_one({"_id": ObjectId(material_id)})
+                if material_doc and material_doc.get("materialName"):
+                    data["materialName"] = material_doc["materialName"]
+            except Exception as lookup_error:
+                return error_response(f"Error al buscar materialName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
 
 
         new = await loads_collection.insert_one(data)
@@ -266,6 +275,15 @@ async def update_load_with_form(
                     data["destinationName"] = destination_doc["destinationName"]
             except Exception as lookup_error:
                 return error_response(f"Error al buscar destinationName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
+            
+    # 🔍 Obtener Material
+        if material_id:
+            try:
+                material_doc = await materials_collection.find_one({"_id": ObjectId(material_id)})
+                if material_doc and material_doc.get("materialName"):
+                    data["materialName"] = material_doc["materialName"]
+            except Exception as lookup_error:
+                return error_response(f"Error al buscar materialName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
 
 
         res = await loads_collection.update_one({"_id": ObjectId(id)}, {"$set": data})
