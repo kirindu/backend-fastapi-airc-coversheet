@@ -6,6 +6,8 @@ def coversheet_helper(coversheet) -> dict:
         "clockIn": coversheet["clockIn"],
         "clockOut": coversheet["clockOut"],
         "trainee": coversheet["trainee"],
+        "clockInTrainee": coversheet["clockInTrainee"],
+        "clockOutTrainee": coversheet["clockOutTrainee"],
         "timePreTripStart": coversheet["timePreTripStart"],
         "timePreTripEnd": coversheet["timePreTripEnd"],
         "timePostTripStart": coversheet["timePostTripStart"],
