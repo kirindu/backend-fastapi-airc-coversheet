@@ -244,7 +244,7 @@ async def update_load_with_form(
         }
         
         # Campos de auditoría
-        data["updatedAt"] = None
+        data["updatedAt"] = datetime.now(timezone.utc)
         
     # 🔍 Obtener homeBaseName
         if homebase_id:
