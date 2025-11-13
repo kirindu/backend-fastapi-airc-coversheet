@@ -1,5 +1,6 @@
 from fastapi import APIRouter, status, UploadFile, File, Form, HTTPException
 from models.load_model import LoadModel
+from datetime import datetime, timezone
 from config.database import loads_collection
 from config.database import routes_collection
 from config.database import landfills_collection  
@@ -100,6 +101,10 @@ async def create_load_with_images(
             "destination_id": destination_id,
             "material_id": material_id,
         }
+        
+        # Campos de auditoría
+        data["createdAt"] = datetime.now(timezone.utc)
+        data["updatedAt"] = None
         
 # 🔍 Obtener homeBaseName
         if homebase_id:
@@ -237,6 +242,9 @@ async def update_load_with_form(
             "material_id": material_id,
             "images": image_paths
         }
+        
+        # Campos de auditoría
+        data["updatedAt"] = None
         
     # 🔍 Obtener homeBaseName
         if homebase_id:
