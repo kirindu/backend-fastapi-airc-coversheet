@@ -55,7 +55,11 @@ async def create_load_with_images(
 
         if images:  # Verificar si hay imágenes
             for image in images:
-                if not image.content_type.startswith("image/"):
+                # Ignorar entradas vacías
+                if not image or not image.filename:
+                    continue # salta archivos vacíos
+                
+                if not image.content_type or not image.content_type.startswith("image/"):
                     return error_response(
                         f"The file '{image.filename}' is not a image.",
                         status_code=status.HTTP_400_BAD_REQUEST
@@ -177,11 +181,15 @@ async def update_load_with_form(
         upload_dir = "uploads"
         os.makedirs(upload_dir, exist_ok=True)
 
-        if images:  # Verificar si hay nuevas imágenes
+        if images:  # Verificar si hay imágenes
             for image in images:
-                if not image.content_type.startswith("image/"):
+                # Ignorar entradas vacías
+                if not image or not image.filename:
+                    continue # salta archivos vacíos
+                
+                if not image.content_type or not image.content_type.startswith("image/"):
                     return error_response(
-                        f"El archivo '{image.filename}' no es una imagen válida.",
+                        f"The file '{image.filename}' is not a image.",
                         status_code=status.HTTP_400_BAD_REQUEST
                     )
 
