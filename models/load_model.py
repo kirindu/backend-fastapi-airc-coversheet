@@ -18,7 +18,7 @@ class LoadModel(BaseModel):
     tareWeightLoad: str
     tonsLoad: str
     backYardLoad: str
-    note: Optional[str]= None
+    noteLoad: Optional[str]= None
     preloadedLoad: Optional[bool]= False
     preloadedNextDayLoad: Optional[bool]= False
     images: Optional[list]= []
