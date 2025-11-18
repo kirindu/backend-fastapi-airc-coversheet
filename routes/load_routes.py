@@ -35,7 +35,7 @@ async def create_load_with_images(
     tonsLoad: Optional[str] = Form(None),
     backYardLoad: Optional[str] = Form(None),
     images: List[UploadFile] = File(default=None), # Cambiar default=[] a default=None para manejar mejor la ausencia de imágenes
-    note: Optional[str] = Form(None),
+    noteLoad: Optional[str] = Form(None),
     preloadedLoad: Optional[bool] = Form(False),
     preloadedNextDayLoad: Optional[bool] = Form(False),
     
@@ -92,7 +92,7 @@ async def create_load_with_images(
             "backYardLoad": backYardLoad,
             "preloadedLoad": preloadedLoad,
             "preloadedNextDayLoad": preloadedNextDayLoad,
-            "note": note,
+            "noteLoad": noteLoad,
             "images": image_paths if image_paths else [],  # Asegurar que 'images' siempre sea una lista     
             
             "homebase_id": homebase_id,
@@ -176,7 +176,7 @@ async def update_load_with_form(
     tonsLoad: Optional[str] = Form(None),
     backYardLoad: Optional[str] = Form(None),
     images: List[UploadFile] = File(default=None), # Cambiar default=[] a default=None para manejar mejor la ausencia de imágenes
-    note: Optional[str] = Form(None),
+    noteLoad: Optional[str] = Form(None),
     preloadedLoad: Optional[bool] = Form(False),
     preloadedNextDayLoad: Optional[bool] = Form(False),
     
@@ -233,7 +233,7 @@ async def update_load_with_form(
             "backYardLoad": backYardLoad,
             "preloadedLoad": preloadedLoad,
             "preloadedNextDayLoad": preloadedNextDayLoad,
-            "note": note,
+            "noteLoad": noteLoad,
             
             "homebase_id": homebase_id,
             "operator_id": operator_id,
