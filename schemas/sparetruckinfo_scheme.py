@@ -23,14 +23,14 @@ def sparetruckinfo_helper(sparetruckinfo) -> dict:
     
     # SINGLE RELATIONSHIPS
     
-        "homebase_id": sparetruckinfo["homebase_id"],
+        # "homebase_id": sparetruckinfo["homebase_id"],
         "truck_id": sparetruckinfo["truck_id"], 
         "trailer_id": sparetruckinfo["trailer_id"], 
         
          # Additional fields
         "truckNumber": sparetruckinfo.get("truckNumber", ""),
         "trailerNumber": sparetruckinfo.get("trailerNumber", ""),
-        "homeBaseName": sparetruckinfo.get("homeBaseName", ""),
+        # "homeBaseName": sparetruckinfo.get("homeBaseName", ""),
         
               # AUDIT FIELDS
 

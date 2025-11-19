@@ -29,7 +29,7 @@ class SpareTruckInfoModel(BaseModel):
     
     
     # ANOTHER RELATIONSHIPS
-    homebase_id: str
+    # homebase_id: str
     truck_id: str
     trailer_id: str
     

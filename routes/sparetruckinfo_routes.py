@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
 from models.sparetruckinfo_model import SpareTruckInfoModel
 from config.database import sparetruckinfos_collection
-from config.database import homebases_collection
+# from config.database import homebases_collection
 from config.database import trucks_collection
 from config.database import trailers_collection
 from schemas.sparetruckinfo_scheme import sparetruckinfo_helper
@@ -18,11 +18,11 @@ async def create_sparetruckinfo(sparetruckinfo: SpareTruckInfoModel):
         coversheet_id = data.pop("coversheet_id")
 
         # Fetch homeBaseName from homebase_collection
-        homebase_id = data.get("homebase_id")
-        if homebase_id:
-            homebase_doc = await homebases_collection.find_one({"_id": ObjectId(homebase_id)})
-            if homebase_doc and homebase_doc.get("homeBaseName"):
-                data["homeBaseName"] = homebase_doc["homeBaseName"]
+        # homebase_id = data.get("homebase_id")
+        # if homebase_id:
+        #     homebase_doc = await homebases_collection.find_one({"_id": ObjectId(homebase_id)})
+        #     if homebase_doc and homebase_doc.get("homeBaseName"):
+        #         data["homeBaseName"] = homebase_doc["homeBaseName"]
                 
          # Fetch truckNumber from trucks_collection
         truck_id = data.get("truck_id")
@@ -83,11 +83,11 @@ async def update_sparetruckinfo(id: str, sparetruckinfo: SpareTruckInfoModel):
         data["updatedAt"] = datetime.now(timezone.utc)
         
         # Fetch homeBaseName si se actualizó homebase_id
-        homebase_id = data.get("homebase_id")
-        if homebase_id:
-            homebase_doc = await homebases_collection.find_one({"_id": ObjectId(homebase_id)})
-            if homebase_doc and homebase_doc.get("homeBaseName"):
-                data["homeBaseName"] = homebase_doc["homeBaseName"]
+        # homebase_id = data.get("homebase_id")
+        # if homebase_id:
+        #     homebase_doc = await homebases_collection.find_one({"_id": ObjectId(homebase_id)})
+        #     if homebase_doc and homebase_doc.get("homeBaseName"):
+        #         data["homeBaseName"] = homebase_doc["homeBaseName"]
                 
         # Fetch truckNumber si se actualizó truck_id  
         truck_id = data.get("truck_id")
