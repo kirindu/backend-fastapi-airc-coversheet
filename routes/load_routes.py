@@ -6,7 +6,7 @@ from config.database import routes_collection
 from config.database import landfills_collection  
 from config.database import sources_collection
 from config.database import destinations_collection
-from config.database import homebases_collection
+# from config.database import homebases_collection
 from config.database import materials_collection
 from config.database import operators_collection
 
@@ -39,7 +39,7 @@ async def create_load_with_images(
     preloadedLoad: Optional[bool] = Form(False),
     preloadedNextDayLoad: Optional[bool] = Form(False),
     
-    homebase_id: Optional[str] = Form(None),
+    # homebase_id: Optional[str] = Form(None),
     operator_id: Optional[str] = Form(None),
     source_id: Optional[str] = Form(None),
     destination_id: Optional[str] = Form(None),
@@ -95,7 +95,7 @@ async def create_load_with_images(
             "noteLoad": noteLoad,
             "images": image_paths if image_paths else [],  # Asegurar que 'images' siempre sea una lista     
             
-            "homebase_id": homebase_id,
+            # "homebase_id": homebase_id,
             "operator_id": operator_id,
             "source_id": source_id,
             "destination_id": destination_id,
@@ -107,13 +107,13 @@ async def create_load_with_images(
         data["updatedAt"] = None
         
 # 🔍 Obtener homeBaseName
-        if homebase_id:
-            try:
-                homebase_doc = await homebases_collection.find_one({"_id": ObjectId(homebase_id)})
-                if homebase_doc and homebase_doc.get("homeBaseName"):
-                    data["homeBaseName"] = homebase_doc["homeBaseName"]
-            except Exception as lookup_error:
-                return error_response(f"Error al buscar homeBaseName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
+        # if homebase_id:
+        #     try:
+        #         homebase_doc = await homebases_collection.find_one({"_id": ObjectId(homebase_id)})
+        #         if homebase_doc and homebase_doc.get("homeBaseName"):
+        #             data["homeBaseName"] = homebase_doc["homeBaseName"]
+        #     except Exception as lookup_error:
+        #         return error_response(f"Error al buscar homeBaseName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
             
             
 # 🔍 Obtener Operador
@@ -180,7 +180,7 @@ async def update_load_with_form(
     preloadedLoad: Optional[bool] = Form(False),
     preloadedNextDayLoad: Optional[bool] = Form(False),
     
-    homebase_id: Optional[str] = Form(None),
+    # homebase_id: Optional[str] = Form(None),
     operator_id: Optional[str] = Form(None),
     source_id: Optional[str] = Form(None),
     destination_id: Optional[str] = Form(None),
@@ -235,7 +235,7 @@ async def update_load_with_form(
             "preloadedNextDayLoad": preloadedNextDayLoad,
             "noteLoad": noteLoad,
             
-            "homebase_id": homebase_id,
+            # "homebase_id": homebase_id,
             "operator_id": operator_id,
             "source_id": source_id,
             "destination_id": destination_id,
@@ -247,13 +247,13 @@ async def update_load_with_form(
         data["updatedAt"] = datetime.now(timezone.utc)
         
     # 🔍 Obtener homeBaseName
-        if homebase_id:
-            try:
-                homebase_doc = await homebases_collection.find_one({"_id": ObjectId(homebase_id)})
-                if homebase_doc and homebase_doc.get("homeBaseName"):
-                    data["homeBaseName"] = homebase_doc["homeBaseName"]
-            except Exception as lookup_error:
-                return error_response(f"Error al buscar homeBaseName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
+        # if homebase_id:
+        #     try:
+        #         homebase_doc = await homebases_collection.find_one({"_id": ObjectId(homebase_id)})
+        #         if homebase_doc and homebase_doc.get("homeBaseName"):
+        #             data["homeBaseName"] = homebase_doc["homeBaseName"]
+        #     except Exception as lookup_error:
+        #         return error_response(f"Error al buscar homeBaseName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
             
             
     # 🔍 Obtener Operador

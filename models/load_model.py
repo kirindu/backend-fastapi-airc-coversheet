@@ -29,7 +29,7 @@ class LoadModel(BaseModel):
     
     
      # ANOTHER RELATIONSHIPS
-    homebase_id: Optional[str]= None
+    # homebase_id: Optional[str]= None
     operator_id: Optional[str]= None
     source_id: Optional[str]= None
     destination_id: Optional[str]= None

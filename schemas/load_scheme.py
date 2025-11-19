@@ -19,14 +19,14 @@ def load_helper(load) -> dict:
         
         
         # SINGLE RELATIONSHIPS
-        "homebase_id": load.get("homebase_id", ""),
+        # "homebase_id": load.get("homebase_id", ""),
         "operator_id": load.get("operator_id", ""),
         "source_id": load.get("source_id", ""),
         "destination_id": load.get("destination_id", ""),
         "material_id": load.get("material_id", ""),
 
         # ADDITIONAL FIELDS
-        "homeBaseName": load.get("homeBaseName", ""),
+        # "homeBaseName": load.get("homeBaseName", ""),
         "operatorName": load.get("operatorName", ""),
         "sourceName": load.get("sourceName", ""),
         "destinationName": load.get("destinationName", ""),
