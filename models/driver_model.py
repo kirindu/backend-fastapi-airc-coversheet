@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 
 class DriverModel(BaseModel):
     name: Optional[str]= None
+    username: str
     email: EmailStr
     rol: str = Field(default="Driver")
     password: str

@@ -11,7 +11,7 @@ router = APIRouter()
 @router.post("/login")
 async def driver_login(driver: DriverModel):
     try:
-        db_driver = await drivers_collection.find_one({"email": driver.email})
+        db_driver = await drivers_collection.find_one({"username": driver.username})
 
         if not db_driver or db_driver["password"] != driver.password:
             return error_response("Credenciales inválidas", status_code=status.HTTP_401_UNAUTHORIZED)
@@ -19,6 +19,7 @@ async def driver_login(driver: DriverModel):
         driver_data = {
             "id": str(db_driver["_id"]),
             "name": db_driver["name"],
+            "username": db_driver["username"],
             "email": db_driver["email"],
             "rol": db_driver["rol"]
         }
