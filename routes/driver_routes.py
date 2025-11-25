@@ -20,7 +20,6 @@ async def driver_login(driver: DriverModel):
             "id": str(db_driver["_id"]),
             "name": db_driver["name"],
             "username": db_driver["username"],
-            "email": db_driver["email"],
             "rol": db_driver["rol"]
         }
 
