@@ -1,3 +1,4 @@
+from zoneinfo import ZoneInfo
 from pydantic import BaseModel, Field, EmailStr
 from typing import Optional
 from datetime import datetime, timezone
@@ -25,5 +26,5 @@ class DowntimeModel(BaseModel):
     typeTrailerDownTime_id: Optional[str]= None
     
         # OTHER FIELDS
-    createdAt: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
+    createdAt: Optional[datetime] = Field(default_factory=lambda: datetime.now(ZoneInfo("America/Denver")))
     updatedAt: Optional[datetime] = None
