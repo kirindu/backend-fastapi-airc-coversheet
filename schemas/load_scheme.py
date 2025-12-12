@@ -24,6 +24,7 @@ def load_helper(load) -> dict:
         "source_id": load.get("source_id", ""),
         "destination_id": load.get("destination_id", ""),
         "material_id": load.get("material_id", ""),
+        "coversheet_id": load.get("coversheet_id", ""),
 
         # ADDITIONAL FIELDS
         # "homeBaseName": load.get("homeBaseName", ""),

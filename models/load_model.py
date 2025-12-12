@@ -35,6 +35,7 @@ class LoadModel(BaseModel):
     source_id: Optional[str]= None
     destination_id: Optional[str]= None
     material_id: Optional[str]= None
+    coversheet_id: Optional[str]= None
     
     # OTHER FIELDS
     createdAt: Optional[datetime] = Field(default_factory=lambda: datetime.now(ZoneInfo("America/Denver")))
