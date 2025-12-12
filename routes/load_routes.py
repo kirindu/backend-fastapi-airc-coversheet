@@ -100,6 +100,7 @@ async def create_load_with_images(
             "source_id": source_id,
             "destination_id": destination_id,
             "material_id": material_id,
+            "coversheet_id": coversheet_id
         }
         
         # Campos de auditoría
