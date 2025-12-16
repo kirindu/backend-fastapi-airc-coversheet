@@ -35,6 +35,7 @@ async def create_load_with_images(
     tonsLoad: Optional[str] = Form(None),
     backYardLoad: Optional[str] = Form(None),
     images: List[UploadFile] = File(default=None), # Cambiar default=[] a default=None para manejar mejor la ausencia de imágenes
+    image_path: Optional[str] = Form(None),
     noteLoad: Optional[str] = Form(None),
     preloadedLoad: Optional[bool] = Form(False),
     preloadedNextDayLoad: Optional[bool] = Form(False),
@@ -94,7 +95,7 @@ async def create_load_with_images(
             "preloadedNextDayLoad": preloadedNextDayLoad,
             "noteLoad": noteLoad,
             "images": image_paths if image_paths else [],  # Asegurar que 'images' siempre sea una lista     
-            
+            "image_path": image_path,
             # "homebase_id": homebase_id,
             "operator_id": operator_id,
             "source_id": source_id,
@@ -177,6 +178,7 @@ async def update_load_with_form(
     tonsLoad: Optional[str] = Form(None),
     backYardLoad: Optional[str] = Form(None),
     images: List[UploadFile] = File(default=None), # Cambiar default=[] a default=None para manejar mejor la ausencia de imágenes
+    image_path: Optional[str] = Form(None),
     noteLoad: Optional[str] = Form(None),
     preloadedLoad: Optional[bool] = Form(False),
     preloadedNextDayLoad: Optional[bool] = Form(False),
@@ -242,7 +244,8 @@ async def update_load_with_form(
             "source_id": source_id,
             "destination_id": destination_id,
             "material_id": material_id,
-            "images": image_paths
+            "images": image_paths,
+            "image_path": image_path
         }
         
         # Campos de auditoría

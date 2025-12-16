@@ -23,6 +23,7 @@ class LoadModel(BaseModel):
     preloadedLoad: Optional[bool]= False
     preloadedNextDayLoad: Optional[bool]= False
     images: Optional[list]= []
+    image_path: Optional[str]= None
     
     
     # RELATIONSHIP

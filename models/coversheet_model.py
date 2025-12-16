@@ -9,9 +9,9 @@ class CoversheetModel(BaseModel):
     # GENERAL INFO
     clockIn: str  
     clockOut: str  
+    trainee: str
     clockInTrainee: str  
     clockOutTrainee: str  
-    trainee: str
     timePreTripStart: str
     timePreTripEnd: str
     timePostTripStart: str

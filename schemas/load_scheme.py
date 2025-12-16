@@ -13,6 +13,7 @@ def load_helper(load) -> dict:
         "tonsLoad": load["tonsLoad"],
         "backYardLoad": load["backYardLoad"],
         "images": load.get("images", []),
+        "image_path": load.get("image_path", None),
         "noteLoad": load["noteLoad"],
         "preloadedLoad": load.get("preloadedLoad", False),
         "preloadedNextDayLoad": load.get("preloadedNextDayLoad", False),
