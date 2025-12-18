@@ -15,4 +15,3 @@ ______________________________________________
 Ya una vez teniendo el poyecto configurado solo lo corremos uno de estos dos comandos, el segundo activa la funcion hot reload
 uvicorn main:app --port 3500
 uvicorn main:app --reload --port 3500
-
