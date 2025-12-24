@@ -1,12 +1,12 @@
 from fastapi import APIRouter, status, UploadFile, File, Form, HTTPException
 from models.load_model import LoadModel
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from config.database import loads_collection
 from config.database import routes_collection
 from config.database import landfills_collection  
 from config.database import sources_collection
 from config.database import destinations_collection
-# from config.database import homebases_collection
 from config.database import materials_collection
 from config.database import operators_collection
 
@@ -34,32 +34,27 @@ async def create_load_with_images(
     tareWeightLoad: Optional[str] = Form(None),
     tonsLoad: Optional[str] = Form(None),
     backYardLoad: Optional[str] = Form(None),
-    images: List[UploadFile] = File(default=None), # Cambiar default=[] a default=None para manejar mejor la ausencia de imágenes
+    images: List[UploadFile] = File(default=None),
     image_path: Optional[str] = Form(None),
     noteLoad: Optional[str] = Form(None),
     preloadedLoad: Optional[bool] = Form(False),
     preloadedNextDayLoad: Optional[bool] = Form(False),
     
-    # homebase_id: Optional[str] = Form(None),
     operator_id: Optional[str] = Form(None),
     source_id: Optional[str] = Form(None),
     destination_id: Optional[str] = Form(None),
     material_id: Optional[str] = Form(None),
     coversheet_id: str = Form(...),
-    
-    
-
 ):
     try:
         image_paths = []
         upload_dir = "uploads"
         os.makedirs(upload_dir, exist_ok=True)
 
-        if images:  # Verificar si hay imágenes
+        if images:
             for image in images:
-                # Ignorar entradas vacías
                 if not image or not image.filename:
-                    continue # salta archivos vacíos
+                    continue
                 
                 if not image.content_type or not image.content_type.startswith("image/"):
                     return error_response(
@@ -94,9 +89,8 @@ async def create_load_with_images(
             "preloadedLoad": preloadedLoad,
             "preloadedNextDayLoad": preloadedNextDayLoad,
             "noteLoad": noteLoad,
-            "images": image_paths if image_paths else [],  # Asegurar que 'images' siempre sea una lista     
+            "images": image_paths if image_paths else [],
             "image_path": image_path,
-            # "homebase_id": homebase_id,
             "operator_id": operator_id,
             "source_id": source_id,
             "destination_id": destination_id,
@@ -104,21 +98,16 @@ async def create_load_with_images(
             "coversheet_id": coversheet_id
         }
         
+        # Convertir IDs a ObjectId
+        for field in ["operator_id", "source_id", "destination_id", "material_id", "coversheet_id"]:
+            if data.get(field):
+                data[field] = ObjectId(data[field])
+        
         # Campos de auditoría
-        data["createdAt"] = datetime.now(timezone.utc)
+        data["createdAt"] = datetime.now(ZoneInfo("America/Denver"))
         data["updatedAt"] = None
         
-# 🔍 Obtener homeBaseName
-        # if homebase_id:
-        #     try:
-        #         homebase_doc = await homebases_collection.find_one({"_id": ObjectId(homebase_id)})
-        #         if homebase_doc and homebase_doc.get("homeBaseName"):
-        #             data["homeBaseName"] = homebase_doc["homeBaseName"]
-        #     except Exception as lookup_error:
-        #         return error_response(f"Error al buscar homeBaseName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
-            
-            
-# 🔍 Obtener Operador
+        # 🔍 Obtener Operador
         if operator_id:
             try:
                 operator_doc = await operators_collection.find_one({"_id": ObjectId(operator_id)})
@@ -127,7 +116,7 @@ async def create_load_with_images(
             except Exception as lookup_error:
                 return error_response(f"Error al buscar operatorName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
 
-# 🔍 Obtener Source
+        # 🔍 Obtener Source
         if source_id:
             try:
                 source_doc = await sources_collection.find_one({"_id": ObjectId(source_id)})
@@ -136,8 +125,7 @@ async def create_load_with_images(
             except Exception as lookup_error:
                 return error_response(f"Error al buscar sourceName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
 
-
-# 🔍 Obtener Destionation
+        # 🔍 Obtener Destination
         if destination_id:
             try:
                 destination_doc = await destinations_collection.find_one({"_id": ObjectId(destination_id)})
@@ -146,7 +134,7 @@ async def create_load_with_images(
             except Exception as lookup_error:
                 return error_response(f"Error al buscar destinationName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
             
-# 🔍 Obtener Material
+        # 🔍 Obtener Material
         if material_id:
             try:
                 material_doc = await materials_collection.find_one({"_id": ObjectId(material_id)})
@@ -154,7 +142,6 @@ async def create_load_with_images(
                     data["materialName"] = material_doc["materialName"]
             except Exception as lookup_error:
                 return error_response(f"Error al buscar materialName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
-
 
         new = await loads_collection.insert_one(data)
         created = await loads_collection.find_one({"_id": new.inserted_id})
@@ -177,18 +164,16 @@ async def update_load_with_form(
     tareWeightLoad: Optional[str] = Form(None),
     tonsLoad: Optional[str] = Form(None),
     backYardLoad: Optional[str] = Form(None),
-    images: List[UploadFile] = File(default=None), # Cambiar default=[] a default=None para manejar mejor la ausencia de imágenes
+    images: List[UploadFile] = File(default=None),
     image_path: Optional[str] = Form(None),
     noteLoad: Optional[str] = Form(None),
     preloadedLoad: Optional[bool] = Form(False),
     preloadedNextDayLoad: Optional[bool] = Form(False),
     
-    # homebase_id: Optional[str] = Form(None),
     operator_id: Optional[str] = Form(None),
     source_id: Optional[str] = Form(None),
     destination_id: Optional[str] = Form(None),
     material_id: Optional[str] = Form(None),
-
 ):
     try:
         existing = await loads_collection.find_one({"_id": ObjectId(id)})
@@ -199,11 +184,10 @@ async def update_load_with_form(
         upload_dir = "uploads"
         os.makedirs(upload_dir, exist_ok=True)
 
-        if images:  # Verificar si hay imágenes
+        if images:
             for image in images:
-                # Ignorar entradas vacías
                 if not image or not image.filename:
-                    continue # salta archivos vacíos
+                    continue
                 
                 if not image.content_type or not image.content_type.startswith("image/"):
                     return error_response(
@@ -238,8 +222,6 @@ async def update_load_with_form(
             "preloadedLoad": preloadedLoad,
             "preloadedNextDayLoad": preloadedNextDayLoad,
             "noteLoad": noteLoad,
-            
-            # "homebase_id": homebase_id,
             "operator_id": operator_id,
             "source_id": source_id,
             "destination_id": destination_id,
@@ -248,20 +230,15 @@ async def update_load_with_form(
             "image_path": image_path
         }
         
-        # Campos de auditoría
-        data["updatedAt"] = datetime.now(timezone.utc)
+        # Convertir IDs a ObjectId
+        for field in ["operator_id", "source_id", "destination_id", "material_id"]:
+            if data.get(field):
+                data[field] = ObjectId(data[field])
         
-    # 🔍 Obtener homeBaseName
-        # if homebase_id:
-        #     try:
-        #         homebase_doc = await homebases_collection.find_one({"_id": ObjectId(homebase_id)})
-        #         if homebase_doc and homebase_doc.get("homeBaseName"):
-        #             data["homeBaseName"] = homebase_doc["homeBaseName"]
-        #     except Exception as lookup_error:
-        #         return error_response(f"Error al buscar homeBaseName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
-            
-            
-    # 🔍 Obtener Operador
+        # Campos de auditoría
+        data["updatedAt"] = datetime.now(ZoneInfo("America/Denver"))
+        
+        # 🔍 Obtener Operador
         if operator_id:
             try:
                 operator_doc = await operators_collection.find_one({"_id": ObjectId(operator_id)})
@@ -270,7 +247,7 @@ async def update_load_with_form(
             except Exception as lookup_error:
                 return error_response(f"Error al buscar operatorName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
 
-    # 🔍 Obtener Source
+        # 🔍 Obtener Source
         if source_id:
             try:
                 source_doc = await sources_collection.find_one({"_id": ObjectId(source_id)})
@@ -279,8 +256,7 @@ async def update_load_with_form(
             except Exception as lookup_error:
                 return error_response(f"Error al buscar sourceName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
 
-
-    # 🔍 Obtener Destionation
+        # 🔍 Obtener Destination
         if destination_id:
             try:
                 destination_doc = await destinations_collection.find_one({"_id": ObjectId(destination_id)})
@@ -289,7 +265,7 @@ async def update_load_with_form(
             except Exception as lookup_error:
                 return error_response(f"Error al buscar destinationName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
             
-    # 🔍 Obtener Material
+        # 🔍 Obtener Material
         if material_id:
             try:
                 material_doc = await materials_collection.find_one({"_id": ObjectId(material_id)})
@@ -297,7 +273,6 @@ async def update_load_with_form(
                     data["materialName"] = material_doc["materialName"]
             except Exception as lookup_error:
                 return error_response(f"Error al buscar materialName: {str(lookup_error)}", status_code=status.HTTP_400_BAD_REQUEST)
-
 
         res = await loads_collection.update_one({"_id": ObjectId(id)}, {"$set": data})
         updated = await loads_collection.find_one({"_id": ObjectId(id)})
@@ -313,7 +288,6 @@ async def get_all_loads():
     except Exception as e:
         return error_response(f"Error al obtener loads: {str(e)}")
 
-
 @router.get("/{id}")
 async def get_load(id: str):
     try:
@@ -323,7 +297,6 @@ async def get_load(id: str):
         return error_response("Load no encontrada", status_code=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return error_response(f"Error al obtener load: {str(e)}")
-
 
 @router.delete("/{id}")
 async def delete_load(id: str):

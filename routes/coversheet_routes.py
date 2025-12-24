@@ -46,6 +46,29 @@ async def expand_related_data(coversheet_dict):
     except Exception as e:
         print(f"Error en expansión de datos: {e}")
         return coversheet_dict
+    
+async def expand_related_data_from_doc(doc):
+    """Expande datos desde el documento de MongoDB original (con ObjectIds)."""
+    try:
+        c_id = doc["_id"]  # Ya es ObjectId
+            
+        # Búsquedas directas
+        loads_cursor = loads_collection.find({"coversheet_ref_id": c_id})
+        downtimes_cursor = downtimes_collection.find({"coversheet_ref_id": c_id})
+        spares_cursor = sparetruckinfos_collection.find({"coversheet_ref_id": c_id})
+
+        # Primero convierte el coversheet
+        coversheet_dict = coversheet_helper(doc)
+            
+        # Luego agrega las relaciones
+        coversheet_dict["loads"] = [load_helper(d) for d in await loads_cursor.to_list(length=None)]
+        coversheet_dict["downtimes"] = [downtime_helper(d) for d in await downtimes_cursor.to_list(length=None)]
+        coversheet_dict["spareTruckInfos"] = [sparetruckinfo_helper(d) for d in await spares_cursor.to_list(length=None)]
+            
+        return coversheet_dict
+    except Exception as e:
+        print(f"Error en expansión de datos: {e}")
+        raise
 
 # --- RUTAS ---
 
@@ -89,8 +112,10 @@ async def get_coversheet_by_id(id: str):
         if not doc:
             return error_response("No encontrada", status_code=404)
         
-        data = coversheet_helper(doc)
-        return success_response(await expand_related_data(data))
+        # ✅ Expande y retorna directamente (ya está convertido dentro de la función)
+        data = await expand_related_data_from_doc(doc)
+        return success_response(data)  # ❌ NO llames a coversheet_helper aquí
+        
     except Exception as e:
         return error_response(str(e))
 

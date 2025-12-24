@@ -1,4 +1,3 @@
-
 def load_helper(load) -> dict:
     return {
         "id": str(load["_id"]),
@@ -19,16 +18,14 @@ def load_helper(load) -> dict:
         "preloadedNextDayLoad": load.get("preloadedNextDayLoad", False),
         
         
-        # SINGLE RELATIONSHIPS
-        # "homebase_id": load.get("homebase_id", ""),
-        "operator_id": load.get("operator_id", ""),
-        "source_id": load.get("source_id", ""),
-        "destination_id": load.get("destination_id", ""),
-        "material_id": load.get("material_id", ""),
-        "coversheet_id": load.get("coversheet_id", ""),
+        # SINGLE RELATIONSHIPS - ✅ Convertir ObjectIds a strings
+        "operator_id": str(load["operator_id"]) if load.get("operator_id") else None,
+        "source_id": str(load["source_id"]) if load.get("source_id") else None,
+        "destination_id": str(load["destination_id"]) if load.get("destination_id") else None,
+        "material_id": str(load["material_id"]) if load.get("material_id") else None,
+        "coversheet_id": str(load["coversheet_id"]) if load.get("coversheet_id") else None,
 
         # ADDITIONAL FIELDS
-        # "homeBaseName": load.get("homeBaseName", ""),
         "operatorName": load.get("operatorName", ""),
         "sourceName": load.get("sourceName", ""),
         "destinationName": load.get("destinationName", ""),
@@ -37,4 +34,4 @@ def load_helper(load) -> dict:
         # AUDIT FIELDS  
         "createdAt": load["createdAt"].isoformat() if load.get("createdAt") else None,
         "updatedAt": load["updatedAt"].isoformat() if load.get("updatedAt") else None      
-    }   
+    }
