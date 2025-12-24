@@ -28,14 +28,6 @@ class CoversheetModel(BaseModel):
     date: Optional[datetime] = Field(default_factory=lambda: datetime.now(ZoneInfo("America/Denver")))
     notes: Optional[str] = None
     
-    # SPARE TRUCK INFO -RELATIONSHIP
-    spareTruckInfo_id: Optional[List[str]] = []
-    
-    # DOWNTIME - RELATIONSHIP
-    downtime_id: Optional[List[str]] = []
-    
-    # LOAD - RELATIONSHIP
-    load_id: Optional[List[str]] = []
     
     # ANOTHER RELATIONSHIPS
     

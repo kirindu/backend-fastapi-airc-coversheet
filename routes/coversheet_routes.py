@@ -1,3 +1,4 @@
+from zoneinfo import ZoneInfo
 from fastapi import APIRouter, status, Depends
 from models.coversheet_model import CoversheetModel
 from config.database import coversheets_collection
@@ -5,16 +6,14 @@ from schemas.coversheet_scheme import coversheet_helper
 from config.dependencies import get_current_user
 from utils.response_helper import success_response, error_response
 from datetime import datetime, timedelta
+from bson import ObjectId
 
+# Importación de Helpers de otras colecciones
 from schemas.load_scheme import load_helper
 from schemas.downtime_scheme import downtime_helper
 from schemas.sparetruckinfo_scheme import sparetruckinfo_helper
-from schemas.truck_scheme import truck_helper
-from schemas.route_scheme import route_helper
-from schemas.homebase_scheme import homebase_helper
-from schemas.trailer_scheme import trailer_helper
-from schemas.driver_scheme import driver_helper
 
+# Importación de Colecciones
 from config.database import (
     loads_collection,
     downtimes_collection,
@@ -25,280 +24,146 @@ from config.database import (
     drivers_collection
 )
 
-from bson import ObjectId
-
 router = APIRouter()
 
-async def expand_related_data(coversheet):
+# --- FUNCIONES INTERNAS (HELPERS) ---
+
+async def expand_related_data(coversheet_dict):
+    """Agrega la información de loads, downtimes y spares al diccionario de la coversheet."""
     try:
-        loads = [load_helper(await loads_collection.find_one({"_id": ObjectId(load_id)}))
-                 for load_id in coversheet.get("load_id", []) if await loads_collection.find_one({"_id": ObjectId(load_id)})]
+        c_id = ObjectId(coversheet_dict["id"])
+        
+        # Búsquedas directas por referencia inversa
+        loads_cursor = loads_collection.find({"coversheet_ref_id": c_id})
+        downtimes_cursor = downtimes_collection.find({"coversheet_ref_id": c_id})
+        spares_cursor = sparetruckinfos_collection.find({"coversheet_ref_id": c_id})
 
-        downtimes = [downtime_helper(await downtimes_collection.find_one({"_id": ObjectId(dt_id)}))
-                     for dt_id in coversheet.get("downtime_id", []) if await downtimes_collection.find_one({"_id": ObjectId(dt_id)})]
-
-        sparetrucks = [sparetruckinfo_helper(await sparetruckinfos_collection.find_one({"_id": ObjectId(sp_id)}))
-                       for sp_id in coversheet.get("spareTruckInfo_id", []) if await sparetruckinfos_collection.find_one({"_id": ObjectId(sp_id)})]
-
-        homebase = await homebases_collection.find_one({"_id": ObjectId(coversheet["homebase_id"])})
-        truck = await trucks_collection.find_one({"_id": ObjectId(coversheet["truck_id"])})
-        trailer = await trailers_collection.find_one({"_id": ObjectId(coversheet["trailer_id"])})
-        driver = await drivers_collection.find_one({"_id": ObjectId(coversheet["driver_id"])})
-
-        return {
-            **coversheet_helper(coversheet),
-            "loads": loads,
-            "downtimes": downtimes,
-            "spareTruckInfos": sparetrucks,
-            "truck": truck_helper(truck) if truck else None,
-            "trailer": trailer_helper(trailer) if trailer else None,
-            "homebase": homebase_helper(homebase) if homebase else None,
-            "driver": driver_helper(driver) if driver else None
-        }
+        coversheet_dict["loads"] = [load_helper(doc) for doc in await loads_cursor.to_list(length=None)]
+        coversheet_dict["downtimes"] = [downtime_helper(doc) for doc in await downtimes_cursor.to_list(length=None)]
+        coversheet_dict["spareTruckInfos"] = [sparetruckinfo_helper(doc) for doc in await spares_cursor.to_list(length=None)]
+        
+        return coversheet_dict
     except Exception as e:
-        return error_response(f"Error al expandir datos relacionados: {str(e)}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        print(f"Error en expansión de datos: {e}")
+        return coversheet_dict
 
-
-@router.get("/with-details")
-async def get_all_coversheets_with_details():
-    try:
-        coversheets = [doc async for doc in coversheets_collection.find()]
-        result = [await expand_related_data(c) for c in coversheets]
-        return success_response(result, msg="Coversheets con detalles obtenidas")
-    except Exception as e:
-        return error_response(f"Error al obtener coversheets con detalles: {str(e)}")
-
-
-@router.get("/with-details/{id}")
-async def get_coversheet_with_details(id: str):
-    try:
-        coversheet = await coversheets_collection.find_one({"_id": ObjectId(id)})
-        if not coversheet:
-            return error_response("Coversheet no encontrada", status_code=status.HTTP_404_NOT_FOUND)
-        return success_response(await expand_related_data(coversheet))
-    except Exception as e:
-        return error_response(f"Error al obtener coversheet: {str(e)}")
-
-
-@router.post("/")
-async def create_coversheet(coversheet: CoversheetModel):
-    try:
-        data = coversheet.model_dump()
-
-        # Fetch trailerNumber from trailers_collection
-        trailer_id = data.get("trailer_id")
-        if trailer_id:
-            trailer_doc = await trailers_collection.find_one({"_id": ObjectId(trailer_id)})
-            if trailer_doc and trailer_doc.get("trailerNumber"):
-                data["trailerNumber"] = trailer_doc["trailerNumber"]
-                
-        # Fetch truckNumber from trucks_collection
-        truck_id = data.get("truck_id")
-        if truck_id:
-            truck_doc = await trucks_collection.find_one({"_id": ObjectId(truck_id)})
-            if truck_doc and truck_doc.get("truckNumber"):
-                data["truckNumber"] = truck_doc["truckNumber"]
-
-        # Fetch homeBaseName from homebase_collection
-        homebase_id = data.get("homebase_id")
-        if homebase_id:
-            homebase_doc = await homebases_collection.find_one({"_id": ObjectId(homebase_id)})
-            if homebase_doc and homebase_doc.get("homeBaseName"):
-                data["homeBaseName"] = homebase_doc["homeBaseName"]
-
-        # Fetch driverName from drivers_collection
-        driver_id = data.get("driver_id")
-        if driver_id:
-            driver_doc = await drivers_collection.find_one({"_id": ObjectId(driver_id)})
-            if driver_doc and driver_doc.get("name"):
-                data["driverName"] = driver_doc["name"]
-
-        # Insert the new Coversheet with populated fields
-        new = await coversheets_collection.insert_one(data)
-        created = await coversheets_collection.find_one({"_id": new.inserted_id})
-        return success_response(coversheet_helper(created), msg="Coversheet creada exitosamente")
-    except Exception as e:
-        return error_response(f"Error al crear coversheet: {str(e)}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+# --- RUTAS ---
 
 @router.get("/")
 async def get_all_coversheets():
     try:
-        coversheets = [coversheet_helper(c) async for c in coversheets_collection.find()]
-        return success_response(coversheets, msg="Coversheets obtenidas")
+        cursor = coversheets_collection.find().sort("date", -1).limit(50)
+        docs = await cursor.to_list(length=50)
+        return success_response([coversheet_helper(d) for d in docs])
     except Exception as e:
-        return error_response(f"Error al obtener coversheets: {str(e)}")
+        return error_response(str(e))
 
-from datetime import datetime, timedelta
-from fastapi import Query
-
-
-@router.get("/by-date/{date}")
-async def get_coversheets_by_date(date: str):
+# 1. RUTA DE FECHA (Debe ir antes de {id})
+@router.get("/by-date/{date_str}")
+async def get_coversheets_by_date(date_str: str):
+    """Postman: GET /api/coversheets/by-date/2025-12-24"""
     try:
-        # Convertir string a datetime
         try:
-            query_date = datetime.strptime(date, "%Y-%m-%d")
+            query_date = datetime.strptime(date_str, "%Y-%m-%d")
         except ValueError:
-            return error_response("Formato de fecha inválido. Usa YYYY-MM-DD", status_code=status.HTTP_400_BAD_REQUEST)
+            return error_response("Formato inválido. Usa YYYY-MM-DD", status_code=400)
 
-        # Rango de fecha del día completo
-        start = datetime(query_date.year, query_date.month, query_date.day)
+        tz = ZoneInfo("America/Denver")
+        start = datetime(query_date.year, query_date.month, query_date.day, tzinfo=tz)
         end = start + timedelta(days=1)
 
-        # Buscar coversheets en ese rango
-        coversheets = [
-            coversheet_helper(c)
-            async for c in coversheets_collection.find({
-                "date": {"$gte": start, "$lt": end}
-            })
-        ]
-
-        return success_response(coversheets, msg=f"Coversheets del día {date} obtenidos")
+        cursor = coversheets_collection.find({"date": {"$gte": start, "$lt": end}})
+        docs = await cursor.to_list(length=None)
+        return success_response([coversheet_helper(d) for d in docs])
     except Exception as e:
-        return error_response(f"Error al obtener coversheets por fecha: {str(e)}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return error_response(str(e))
+
+# 2. RUTA DE ID ÚNICO
 @router.get("/{id}")
-async def get_coversheet(id: str):
+async def get_coversheet_by_id(id: str):
     try:
-        c = await coversheets_collection.find_one({"_id": ObjectId(id)})
-        if c:
-            return success_response(coversheet_helper(c))
-        return error_response("Coversheet no encontrada", status_code=status.HTTP_404_NOT_FOUND)
+        if not ObjectId.is_valid(id):
+            return error_response("ID de Coversheet inválido", status_code=400)
+            
+        doc = await coversheets_collection.find_one({"_id": ObjectId(id)})
+        if not doc:
+            return error_response("No encontrada", status_code=404)
+        
+        data = coversheet_helper(doc)
+        return success_response(await expand_related_data(data))
     except Exception as e:
-        return error_response(f"Error al obtener coversheet: {str(e)}")
+        return error_response(str(e))
 
+@router.post("/", status_code=status.HTTP_201_CREATED)
+async def create_coversheet(coversheet: CoversheetModel, current_user: str = Depends(get_current_user)):
+    try:
+        data = coversheet.model_dump()
+        
+        # Convertir IDs a ObjectId y limpiar obsoletos
+        for f in ["truck_id", "trailer_id", "homebase_id", "driver_id"]:
+            if data.get(f): data[f] = ObjectId(data[f])
+        
+        for f in ["load_id", "downtime_id", "spareTruckInfo_id"]:
+            data.pop(f, None)
+
+        data["createdAt"] = datetime.now(ZoneInfo("America/Denver"))
+        data["updatedAt"] = data["createdAt"]
+        data["createdBy"] = current_user.get("email", "unknown")
+
+        result = await coversheets_collection.insert_one(data)
+        new_doc = await coversheets_collection.find_one({"_id": result.inserted_id})
+        return success_response(coversheet_helper(new_doc), msg="Creada exitosamente")
+    except Exception as e:
+        return error_response(f"Error al crear: {str(e)}")
 
 @router.put("/{id}")
 async def update_coversheet(id: str, coversheet: CoversheetModel):
     try:
-        data = coversheet.model_dump(exclude_unset=True)
-
-        # 🔒 Evitar que 'date' sea actualizado
-        if "date" in data:
-            del data["date"]
-
-        # 🔄 Actualizar la fecha de modificación
-        from datetime import datetime, timezone
-        data["updatedAt"] = datetime.now(timezone.utc)
+        if not ObjectId.is_valid(id): return error_response("ID inválido", status_code=400)
         
-        # Fetch trailerNumber si se actualizó trailer_id  
-        trailer_id = data.get("trailer_id")
-        if trailer_id:
-            trailer_doc = await trailers_collection.find_one({"_id": ObjectId(trailer_id)})
-            if trailer_doc and trailer_doc.get("trailerNumber"):
-                data["trailerNumber"] = trailer_doc["trailerNumber"]
+        data = coversheet.model_dump(exclude_unset=True)
+        data.pop("date", None) # No permitir cambio de fecha por aquí
+        
+        # Limpiar y convertir IDs
+        for f in ["load_id", "downtime_id", "spareTruckInfo_id"]: data.pop(f, None)
+        
+        data["updatedAt"] = datetime.now(ZoneInfo("America/Denver"))
 
-        # Fetch truckNumber si se actualizó truck_id  
-        truck_id = data.get("truck_id")
-        if truck_id:
-            truck_doc = await trucks_collection.find_one({"_id": ObjectId(truck_id)})
-            if truck_doc and truck_doc.get("truckNumber"):
-                data["truckNumber"] = truck_doc["truckNumber"]
+        # Desnormalización de nombres para velocidad
+        maps = {
+            "truck_id": (trucks_collection, "truckNumber", "truckNumber"),
+            "trailer_id": (trailers_collection, "trailerNumber", "trailerNumber"),
+            "homebase_id": (homebases_collection, "homeBaseName", "homeBaseName"),
+            "driver_id": (drivers_collection, "name", "driverName")
+        }
 
-        # Fetch homeBaseName si se actualizó homebase_id
-        homebase_id = data.get("homebase_id")
-        if homebase_id:
-            homebase_doc = await homebases_collection.find_one({"_id": ObjectId(homebase_id)})
-            if homebase_doc and homebase_doc.get("homeBaseName"):
-                data["homeBaseName"] = homebase_doc["homeBaseName"]
+        for field, (col, key, target) in maps.items():
+            if field in data:
+                data[field] = ObjectId(data[field])
+                ref_doc = await col.find_one({"_id": data[field]})
+                if ref_doc: data[target] = ref_doc.get(key, "")
 
-        # Fetch driverName si se actualizó driver_id
-        driver_id = data.get("driver_id")
-        if driver_id:
-            driver_doc = await drivers_collection.find_one({"_id": ObjectId(driver_id)})
-            if driver_doc and driver_doc.get("name"):
-                data["driverName"] = driver_doc["name"]
-
-        # 💾 Actualizar documento
-        res = await coversheets_collection.update_one({"_id": ObjectId(id)}, {"$set": data})
-        if res.matched_count == 0:
-            return error_response("Coversheet no encontrada", status_code=status.HTTP_404_NOT_FOUND)
-
+        await coversheets_collection.update_one({"_id": ObjectId(id)}, {"$set": data})
         updated = await coversheets_collection.find_one({"_id": ObjectId(id)})
-        return success_response(coversheet_helper(updated), msg="Coversheet actualizada exitosamente")
+        return success_response(coversheet_helper(updated))
     except Exception as e:
-        return error_response(f"Error al actualizar coversheet: {str(e)}")
+        return error_response(str(e))
 
-
-
-@router.delete("/{id}")
-async def delete_coversheet(id: str):
-    try:
-        res = await coversheets_collection.delete_one({"_id": ObjectId(id)})
-        if res.deleted_count:
-            return success_response(None, msg="Coversheet eliminada")
-        return error_response("Coversheet no encontrada", status_code=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return error_response(f"Error al eliminar coversheet: {str(e)}")
-
-@router.get("/{id}/sparetruckinfo")
-async def get_sparetruckinfo_by_coversheet(id: str):
-    from config.database import sparetruckinfos_collection
-    from schemas.sparetruckinfo_scheme import sparetruckinfo_helper
-
-    try:
-        coversheet = await coversheets_collection.find_one({"_id": ObjectId(id)})
-        if not coversheet:
-            return error_response("Coversheet no encontrado", status_code=status.HTTP_404_NOT_FOUND)
-
-        spare_ids = coversheet.get("spareTruckInfo_id", [])
-        if not spare_ids:
-            return success_response([], msg="No hay SpareTruckInfos asociados")
-
-        results = []
-        for sp_id in spare_ids:
-            doc = await sparetruckinfos_collection.find_one({"_id": ObjectId(sp_id)})
-            if doc:
-                results.append(sparetruckinfo_helper(doc))
-
-        return success_response(results, msg="SpareTruckInfos obtenidos")
-    except Exception as e:
-        return error_response(f"Error al obtener SpareTruckInfos: {str(e)}")
+# 3. RUTAS DE HIJOS (REFERENCIA INVERSA)
+@router.get("/{id}/load")
+async def get_loads_of_coversheet(id: str):
+    if not ObjectId.is_valid(id): return error_response("ID inválido", status_code=400)
+    cursor = loads_collection.find({"coversheet_ref_id": ObjectId(id)})
+    return success_response([load_helper(d) for d in await cursor.to_list(length=None)])
 
 @router.get("/{id}/downtime")
-async def get_downtime_by_coversheet(id: str):
-    from config.database import downtimes_collection
-    from schemas.downtime_scheme import downtime_helper
+async def get_downtimes_of_coversheet(id: str):
+    if not ObjectId.is_valid(id): return error_response("ID inválido", status_code=400)
+    cursor = downtimes_collection.find({"coversheet_ref_id": ObjectId(id)})
+    return success_response([downtime_helper(d) for d in await cursor.to_list(length=None)])
 
-    try:
-        coversheet = await coversheets_collection.find_one({"_id": ObjectId(id)})
-        if not coversheet:
-            return error_response("Coversheet no encontrado", status_code=status.HTTP_404_NOT_FOUND)
-
-        downtime_ids = coversheet.get("downtime_id", [])
-        if not downtime_ids:
-            return success_response([], msg="No hay Downtimes asociados")
-
-        results = []
-        for do_id in downtime_ids:
-            doc = await downtimes_collection.find_one({"_id": ObjectId(do_id)})
-            if doc:
-                results.append(downtime_helper(doc))
-
-        return success_response(results, msg="Dowmtimes obtenidos")
-    except Exception as e:
-        return error_response(f"Error al obtener Dowmtimes: {str(e)}")
-
-@router.get("/{id}/load")
-async def get_load_by_coversheet(id: str):
-    from config.database import loads_collection
-    from schemas.load_scheme import load_helper
-
-    try:
-        coversheet = await coversheets_collection.find_one({"_id": ObjectId(id)})
-        if not coversheet:
-            return error_response("Coversheet no encontrado", status_code=status.HTTP_404_NOT_FOUND)
-
-        load_ids = coversheet.get("load_id", [])
-        if not load_ids:
-            return success_response([], msg="No hay Loads asociados")
-
-        results = []
-        for lo_id in load_ids:
-            doc = await loads_collection.find_one({"_id": ObjectId(lo_id)})
-            if doc:
-                results.append(load_helper(doc))
-
-        return success_response(results, msg="Loads obtenidos")
-    except Exception as e:
-        return error_response(f"Error al obtener Loads: {str(e)}")
+@router.get("/{id}/sparetruckinfo")
+async def get_spares_of_coversheet(id: str):
+    if not ObjectId.is_valid(id): return error_response("ID inválido", status_code=400)
+    cursor = sparetruckinfos_collection.find({"coversheet_ref_id": ObjectId(id)})
+    return success_response([sparetruckinfo_helper(d) for d in await cursor.to_list(length=None)])

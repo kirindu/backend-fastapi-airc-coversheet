@@ -24,16 +24,12 @@ def coversheet_helper(coversheet) -> dict:
         "date": coversheet["date"].isoformat() if coversheet.get("date") else None,
         "notes": coversheet["notes"],
         
-        # MULTIPLE RELATIONSHIPS (listas)
-        "spareTruckInfo_id": coversheet.get("spareTruckInfo_id", []),
-        "downtime_id": coversheet.get("downtime_id", []),
-        "load_id": coversheet.get("load_id", []),
-        
-         # SINGLE RELATIONSHIPS
-        "truck_id": coversheet["truck_id"],
-        "trailer_id": coversheet["trailer_id"],
-        "homebase_id": coversheet["homebase_id"],
-        "driver_id": coversheet["driver_id"],
+     
+# SINGLE RELATIONSHIPS (Asegúrate de que estos ahora se conviertan a str)
+        "truck_id": str(coversheet["truck_id"]) if coversheet.get("truck_id") else None,
+        "trailer_id": str(coversheet["trailer_id"]) if coversheet.get("trailer_id") else None,
+        "homebase_id": str(coversheet["homebase_id"]) if coversheet.get("homebase_id") else None,
+        "driver_id": str(coversheet["driver_id"]) if coversheet.get("driver_id") else None,
         
         # Additional fields
         "truckNumber": coversheet.get("truckNumber", ""),
