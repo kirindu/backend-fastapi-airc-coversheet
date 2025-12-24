@@ -132,8 +132,8 @@ async def create_coversheet(coversheet: CoversheetModel, current_user: str = Dep
             data.pop(f, None)
 
         data["createdAt"] = datetime.now(ZoneInfo("America/Denver"))
+        data["date"] = data["createdAt"].replace(hour=0, minute=0, second=0, microsecond=0)
         data["updatedAt"] = data["createdAt"]
-        data["createdBy"] = current_user.get("email", "unknown")
 
         result = await coversheets_collection.insert_one(data)
         new_doc = await coversheets_collection.find_one({"_id": result.inserted_id})
