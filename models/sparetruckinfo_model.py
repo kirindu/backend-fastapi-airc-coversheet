@@ -4,6 +4,7 @@ from typing import Optional
 from datetime import datetime
 
 class SpareTruckInfoModel(BaseModel):
+    """Modelo base para SpareTruckInfo"""
     
     # GENERAL INFO
     timeLeaveYardSpareTruckInfo: str
@@ -21,9 +22,33 @@ class SpareTruckInfoModel(BaseModel):
     truck_id: str
     trailer_id: str
     
-    # coversheet_id es OBLIGATORIO al crear
-    coversheet_id: str
-    
-    # OTHER FIELDS
-    createdAt: Optional[datetime] = Field(default_factory=lambda: datetime.now(ZoneInfo("America/Denver")))
+    # AUDIT FIELDS (manejados automáticamente en el backend)
+    createdAt: Optional[datetime] = None
     updatedAt: Optional[datetime] = None
+
+
+class SpareTruckInfoCreateModel(SpareTruckInfoModel):
+    """Modelo específico para CREAR sparetruckinfo - requiere coversheet_id"""
+    coversheet_id: str  # OBLIGATORIO solo al crear
+
+
+class SpareTruckInfoUpdateModel(BaseModel):
+    """Modelo específico para ACTUALIZAR sparetruckinfo - todos los campos opcionales"""
+    
+    # GENERAL INFO
+    timeLeaveYardSpareTruckInfo: Optional[str] = None
+    timeBackInYardSpareTruckInfo: Optional[str] = None
+    fuelSpareTruckInfo: Optional[str] = None
+    dieselExhaustFluidSpareTruckInfo: Optional[str] = None
+    truckStartMilesSpareTruckInfo: Optional[str] = None
+    truckEndMilesSpareTruckInfo: Optional[str] = None
+    truckStartHoursSpareTruckInfo: Optional[str] = None
+    truckEndHoursSpareTruckInfo: Optional[str] = None
+    trailerStartMilesSpareTruckInfo: Optional[str] = None
+    trailerEndMilesSpareTruckInfo: Optional[str] = None
+    
+    # RELATIONSHIPS
+    truck_id: Optional[str] = None
+    trailer_id: Optional[str] = None
+    
+    # NO incluir coversheet_id aquí - no debe cambiar después de creación

@@ -7,6 +7,8 @@ pipx install virtualenv
 pipx ensurepath
 virtualenv entorno
 source entorno/bin/activate
+pip install --upgrade pip
+pip install "fastapi[standard]"
 pip install -r requirements.txt
 
 Luego solo nos aseguramos que seleccionamos el interpretador correcto, (SHIFT + CTRL + P) o en mac (SHIFT + COMMAND + P)

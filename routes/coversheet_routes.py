@@ -192,3 +192,39 @@ async def get_spares_of_coversheet(id: str):
     if not ObjectId.is_valid(id): return error_response("ID inválido", status_code=400)
     cursor = sparetruckinfos_collection.find({"coversheet_ref_id": ObjectId(id)})
     return success_response([sparetruckinfo_helper(d) for d in await cursor.to_list(length=None)])
+
+@router.delete("/{id}")
+async def delete_coversheet(id: str, current_user: str = Depends(get_current_user)):
+    """
+    Elimina una coversheet y opcionalmente sus documentos relacionados.
+    """
+    try:
+        if not ObjectId.is_valid(id):
+            return error_response("ID de Coversheet inválido", status_code=400)
+        
+        coversheet_id = ObjectId(id)
+        
+        # Verificar si existe la coversheet
+        existing = await coversheets_collection.find_one({"_id": coversheet_id})
+        if not existing:
+            return error_response("Coversheet no encontrada", status_code=404)
+        
+        # Eliminar documentos relacionados (loads, downtimes, spareTruckInfos)
+        # Si prefieres mantenerlos, comenta estas líneas
+        await loads_collection.delete_many({"coversheet_ref_id": coversheet_id})
+        await downtimes_collection.delete_many({"coversheet_ref_id": coversheet_id})
+        await sparetruckinfos_collection.delete_many({"coversheet_ref_id": coversheet_id})
+        
+        # Eliminar la coversheet
+        result = await coversheets_collection.delete_one({"_id": coversheet_id})
+        
+        if result.deleted_count == 1:
+            return success_response(
+                {"id": id}, 
+                msg="Coversheet y sus datos relacionados eliminados exitosamente"
+            )
+        else:
+            return error_response("No se pudo eliminar la coversheet", status_code=500)
+            
+    except Exception as e:
+        return error_response(f"Error al eliminar: {str(e)}")

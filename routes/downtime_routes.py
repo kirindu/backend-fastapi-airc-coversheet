@@ -1,6 +1,6 @@
 from zoneinfo import ZoneInfo
 from fastapi import APIRouter, status
-from models.downtime_model import DowntimeModel
+from models.downtime_model import DowntimeCreateModel, DowntimeUpdateModel
 from config.database import downtimes_collection
 from config.database import trucks_collection 
 from config.database import trailers_collection
@@ -14,7 +14,7 @@ from bson import ObjectId
 router = APIRouter()
 
 @router.post("/")
-async def create_downtime(downtime: DowntimeModel):
+async def create_downtime(downtime: DowntimeCreateModel):
     try:
         data = downtime.model_dump()
         coversheet_id = data.pop("coversheet_id")
@@ -90,14 +90,16 @@ async def get_downtime(id: str):
         return error_response(f"Error al obtener downtime: {str(e)}")
     
 @router.put("/{id}")
-async def update_downtime(id: str, downtime: DowntimeModel):
+async def update_downtime(id: str, downtime: DowntimeUpdateModel):
     try:
         # Convertimos el modelo a dict
         data = downtime.model_dump(exclude_unset=True)
-
-        # 🔒 Proteger createdAt y coversheet_id: eliminarlos si están presentes
+        
+        # 🔒 Proteger campos que NO deben cambiar
         data.pop("createdAt", None)
-        data.pop("coversheet_id", None)  # No permitir cambiar el coversheet
+        data.pop("updatedAt", None)
+        data.pop("coversheet_id", None)
+        data.pop("coversheet_ref_id", None)
 
         # 📄 Actualizar la fecha de modificación
         data["updatedAt"] = datetime.now(ZoneInfo("America/Denver"))

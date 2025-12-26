@@ -95,13 +95,15 @@ async def create_load_with_images(
             "source_id": source_id,
             "destination_id": destination_id,
             "material_id": material_id,
-            "coversheet_id": coversheet_id
         }
         
         # Convertir IDs a ObjectId
-        for field in ["operator_id", "source_id", "destination_id", "material_id", "coversheet_id"]:
+        for field in ["operator_id", "source_id", "destination_id", "material_id"]:
             if data.get(field):
                 data[field] = ObjectId(data[field])
+        
+        # ✅ Guardar coversheet_ref_id (NO coversheet_id)
+        data["coversheet_ref_id"] = ObjectId(coversheet_id)
         
         # Campos de auditoría
         data["createdAt"] = datetime.now(ZoneInfo("America/Denver"))

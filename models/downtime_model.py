@@ -4,6 +4,7 @@ from typing import Optional
 from datetime import datetime
 
 class DowntimeModel(BaseModel):
+    """Modelo base para Downtime - usado en creación y actualización"""
     
     # GENERAL INFO
     truckDownTimeStartDownTime: str
@@ -18,9 +19,30 @@ class DowntimeModel(BaseModel):
     typeTruckDownTime_id: Optional[str] = None
     typeTrailerDownTime_id: Optional[str] = None
     
-    # coversheet_id es OBLIGATORIO al crear
-    coversheet_id: str
-    
-    # OTHER FIELDS
-    createdAt: Optional[datetime] = Field(default_factory=lambda: datetime.now(ZoneInfo("America/Denver")))
+    # AUDIT FIELDS (manejados automáticamente en el backend)
+    createdAt: Optional[datetime] = None
     updatedAt: Optional[datetime] = None
+
+
+class DowntimeCreateModel(DowntimeModel):
+    """Modelo específico para CREAR downtime - requiere coversheet_id"""
+    coversheet_id: str  # OBLIGATORIO solo al crear
+
+
+class DowntimeUpdateModel(BaseModel):
+    """Modelo específico para ACTUALIZAR downtime - todos los campos opcionales"""
+    
+    # GENERAL INFO
+    truckDownTimeStartDownTime: Optional[str] = None
+    truckDownTimeEndDownTime: Optional[str] = None
+    trailerDownTimeStartDownTime: Optional[str] = None
+    trailerDownTimeEndDownTime: Optional[str] = None
+    downTimeReasonDownTime: Optional[str] = None
+    
+    # RELATIONSHIPS
+    truck_id: Optional[str] = None
+    trailer_id: Optional[str] = None
+    typeTruckDownTime_id: Optional[str] = None
+    typeTrailerDownTime_id: Optional[str] = None
+    
+    # NO incluir coversheet_id aquí - no debe cambiar después de creación
