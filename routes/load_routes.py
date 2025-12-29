@@ -11,7 +11,6 @@ from config.database import materials_collection
 from config.database import operators_collection
 
 from schemas.load_scheme import load_helper
-from utils.coversheet_updater import add_entity_to_coversheet
 from utils.response_helper import success_response, error_response
 
 from bson import ObjectId
@@ -147,7 +146,6 @@ async def create_load_with_images(
 
         new = await loads_collection.insert_one(data)
         created = await loads_collection.find_one({"_id": new.inserted_id})
-        await add_entity_to_coversheet(coversheet_id, "load_id", str(new.inserted_id))
 
         return success_response(load_helper(created), msg="Load created successfully")
     except Exception as e:

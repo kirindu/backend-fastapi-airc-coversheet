@@ -5,7 +5,6 @@ from config.database import sparetruckinfos_collection
 from config.database import trucks_collection
 from config.database import trailers_collection
 from schemas.sparetruckinfo_scheme import sparetruckinfo_helper
-from utils.coversheet_updater import add_entity_to_coversheet
 from utils.response_helper import success_response, error_response
 from datetime import datetime
 from bson import ObjectId
@@ -62,9 +61,6 @@ async def create_sparetruckinfo(sparetruckinfo: SpareTruckInfoCreateModel):
         # 📦 Insertar el nuevo SpareTruckInfo
         new = await sparetruckinfos_collection.insert_one(data)
         created = await sparetruckinfos_collection.find_one({"_id": new.inserted_id})
-
-        # 🔗 Asociar con coversheet
-        await add_entity_to_coversheet(coversheet_id, "spareTruckInfo_id", str(new.inserted_id))
 
         return success_response(
             sparetruckinfo_helper(created), 

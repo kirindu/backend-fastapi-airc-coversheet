@@ -6,7 +6,6 @@ from config.database import trucks_collection
 from config.database import trailers_collection
 from config.database import typedowntimes_collection
 from schemas.downtime_scheme import downtime_helper
-from utils.coversheet_updater import add_entity_to_coversheet
 from utils.response_helper import success_response, error_response
 from datetime import datetime
 from bson import ObjectId
@@ -63,8 +62,6 @@ async def create_downtime(downtime: DowntimeCreateModel):
         new = await downtimes_collection.insert_one(data)
         created = await downtimes_collection.find_one({"_id": new.inserted_id})
 
-        # 🔗 Asociar con coversheet
-        await add_entity_to_coversheet(coversheet_id, "downtime_id", str(new.inserted_id))
 
         return success_response(downtime_helper(created), msg="Downtime creada exitosamente")
     except Exception as e:

@@ -73,13 +73,124 @@ async def expand_related_data_from_doc(doc):
 # --- RUTAS ---
 
 @router.get("/")
-async def get_all_coversheets():
+async def get_all_coversheets(
+    page: int = 1,
+    limit: int = 50,
+    start_date: str = None,
+    end_date: str = None,
+    truck_id: str = None,
+    trailer_id: str = None,
+    driver_id: str = None,
+    homebase_id: str = None,
+    sort_by: str = "date",
+    sort_order: int = -1
+):
+    """
+    Obtiene coversheets con paginación y filtros.
+    
+    Ejemplos:
+    - GET /api/coversheets/ → Primera página (50 registros)
+    - GET /api/coversheets/?page=2&limit=100 → Segunda página (100 registros)
+    - GET /api/coversheets/?start_date=2025-01-01&end_date=2025-12-31
+    - GET /api/coversheets/?driver_id=ABC123&truck_id=XYZ789
+    """
     try:
-        cursor = coversheets_collection.find().sort("date", -1).limit(50)
-        docs = await cursor.to_list(length=50)
-        return success_response([coversheet_helper(d) for d in docs])
+        # Validar parámetros
+        if page < 1:
+            return error_response("El parámetro 'page' debe ser >= 1", status_code=400)
+        if limit < 1 or limit > 500:
+            return error_response("El parámetro 'limit' debe estar entre 1 y 500", status_code=400)
+        
+        # Construir query de filtros
+        query = {}
+        tz = ZoneInfo("America/Denver")
+        
+        # Filtro de fechas
+        if start_date or end_date:
+            date_filter = {}
+            if start_date:
+                try:
+                    start = datetime.strptime(start_date, "%Y-%m-%d")
+                    start = start.replace(tzinfo=tz)
+                    date_filter["$gte"] = start
+                except ValueError:
+                    return error_response("Formato de start_date inválido. Usa YYYY-MM-DD", status_code=400)
+            
+            if end_date:
+                try:
+                    end = datetime.strptime(end_date, "%Y-%m-%d")
+                    end = end.replace(tzinfo=tz) + timedelta(days=1)
+                    date_filter["$lt"] = end
+                except ValueError:
+                    return error_response("Formato de end_date inválido. Usa YYYY-MM-DD", status_code=400)
+            
+            if date_filter:
+                query["date"] = date_filter
+        
+        # Filtros por IDs (convertir strings a ObjectId)
+        if truck_id:
+            if ObjectId.is_valid(truck_id):
+                query["truck_id"] = ObjectId(truck_id)
+            else:
+                return error_response("truck_id inválido", status_code=400)
+                
+        if trailer_id:
+            if ObjectId.is_valid(trailer_id):
+                query["trailer_id"] = ObjectId(trailer_id)
+            else:
+                return error_response("trailer_id inválido", status_code=400)
+                
+        if driver_id:
+            if ObjectId.is_valid(driver_id):
+                query["driver_id"] = ObjectId(driver_id)
+            else:
+                return error_response("driver_id inválido", status_code=400)
+                
+        if homebase_id:
+            if ObjectId.is_valid(homebase_id):
+                query["homebase_id"] = ObjectId(homebase_id)
+            else:
+                return error_response("homebase_id inválido", status_code=400)
+        
+        # Calcular skip para paginación
+        skip = (page - 1) * limit
+        
+        # Contar total de documentos que coinciden con los filtros
+        total_count = await coversheets_collection.count_documents(query)
+        
+        # Obtener documentos con paginación
+        cursor = coversheets_collection.find(query).sort(sort_by, sort_order).skip(skip).limit(limit)
+        docs = await cursor.to_list(length=limit)
+        
+        # Procesar documentos
+        coversheets = [coversheet_helper(d) for d in docs]
+        
+        # Calcular metadata de paginación
+        total_pages = (total_count + limit - 1) // limit if total_count > 0 else 0
+        
+        return success_response({
+            "data": coversheets,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total_count": total_count,
+                "total_pages": total_pages,
+                "has_next": page < total_pages,
+                "has_prev": page > 1
+            },
+            "filters": {
+                "start_date": start_date,
+                "end_date": end_date,
+                "truck_id": truck_id,
+                "trailer_id": trailer_id,
+                "driver_id": driver_id,
+                "homebase_id": homebase_id,
+                "sort_by": sort_by,
+                "sort_order": sort_order
+            }
+        })
     except Exception as e:
-        return error_response(str(e))
+        return error_response(f"Error al obtener coversheets: {str(e)}")
 
 # 1. RUTA DE FECHA (Debe ir antes de {id})
 @router.get("/by-date/{date_str}")
@@ -124,37 +235,64 @@ async def create_coversheet(coversheet: CoversheetModel, current_user: str = Dep
     try:
         data = coversheet.model_dump()
         
-        # Convertir IDs a ObjectId y limpiar obsoletos
-        for f in ["truck_id", "trailer_id", "homebase_id", "driver_id"]:
-            if data.get(f): data[f] = ObjectId(data[f])
-        
+        # ✅ PASO 1: Limpiar campos obsoletos
         for f in ["load_id", "downtime_id", "spareTruckInfo_id"]:
             data.pop(f, None)
 
+        # ✅ PASO 2: Convertir IDs a ObjectId Y buscar nombres relacionados (DESNORMALIZACIÓN)
+        maps = {
+            "truck_id": (trucks_collection, "truckNumber", "truckNumber"),
+            "trailer_id": (trailers_collection, "trailerNumber", "trailerNumber"),
+            "homebase_id": (homebases_collection, "homeBaseName", "homeBaseName"),
+            "driver_id": (drivers_collection, "name", "driverName")
+        }
+
+        for field, (col, key, target) in maps.items():
+            if data.get(field):
+                # Convertir string ID a ObjectId
+                data[field] = ObjectId(data[field])
+                
+                # Buscar el documento relacionado
+                ref_doc = await col.find_one({"_id": data[field]})
+                
+                # Guardar el nombre en el campo desnormalizado
+                if ref_doc:
+                    data[target] = ref_doc.get(key, "")
+                else:
+                    data[target] = ""  # Si no se encuentra, guardar vacío
+
+        # ✅ PASO 3: Establecer fechas
         data["createdAt"] = datetime.now(ZoneInfo("America/Denver"))
         data["date"] = data["createdAt"].replace(hour=0, minute=0, second=0, microsecond=0)
         data["updatedAt"] = data["createdAt"]
 
+        # ✅ PASO 4: Insertar en la base de datos
         result = await coversheets_collection.insert_one(data)
+        
+        # ✅ PASO 5: Recuperar el documento insertado y devolverlo
         new_doc = await coversheets_collection.find_one({"_id": result.inserted_id})
         return success_response(coversheet_helper(new_doc), msg="Creada exitosamente")
+        
     except Exception as e:
         return error_response(f"Error al crear: {str(e)}")
 
 @router.put("/{id}")
 async def update_coversheet(id: str, coversheet: CoversheetModel):
     try:
-        if not ObjectId.is_valid(id): return error_response("ID inválido", status_code=400)
+        if not ObjectId.is_valid(id): 
+            return error_response("ID inválido", status_code=400)
         
         data = coversheet.model_dump(exclude_unset=True)
-        data.pop("date", None) # No permitir cambio de fecha por aquí
+        data.pop("date", None)  # No permitir cambio de fecha por aquí
         
-        # Limpiar y convertir IDs
-        for f in ["load_id", "downtime_id", "spareTruckInfo_id"]: data.pop(f, None)
+        # ✅ PASO 1: Limpiar campos obsoletos
+        for f in ["load_id", "downtime_id", "spareTruckInfo_id"]: 
+            data.pop(f, None)
         
+        # ✅ PASO 2: Actualizar updatedAt
         data["updatedAt"] = datetime.now(ZoneInfo("America/Denver"))
 
-        # Desnormalización de nombres para velocidad
+        # ✅ PASO 3: Desnormalización de nombres para velocidad
         maps = {
             "truck_id": (trucks_collection, "truckNumber", "truckNumber"),
             "trailer_id": (trailers_collection, "trailerNumber", "trailerNumber"),
@@ -164,13 +302,23 @@ async def update_coversheet(id: str, coversheet: CoversheetModel):
 
         for field, (col, key, target) in maps.items():
             if field in data:
+                # Convertir string ID a ObjectId
                 data[field] = ObjectId(data[field])
+                
+                # Buscar el documento relacionado
                 ref_doc = await col.find_one({"_id": data[field]})
-                if ref_doc: data[target] = ref_doc.get(key, "")
+                
+                # Guardar el nombre en el campo desnormalizado
+                if ref_doc: 
+                    data[target] = ref_doc.get(key, "")
 
+        # ✅ PASO 4: Actualizar en la base de datos
         await coversheets_collection.update_one({"_id": ObjectId(id)}, {"$set": data})
+        
+        # ✅ PASO 5: Recuperar el documento actualizado y devolverlo
         updated = await coversheets_collection.find_one({"_id": ObjectId(id)})
         return success_response(coversheet_helper(updated))
+        
     except Exception as e:
         return error_response(str(e))
 
