@@ -25,6 +25,7 @@ Ejemplos de pprueba de paginacion de coversheet para postman :
 
 🧪 Cómo Probar la Paginación en Postman
 1️⃣ Navegación de Páginas
+
 Página 1 (primera página - ya la tienes)
 GET http://localhost:5173/api/coversheets/
 ✅ Resultado: Registros 1-50
@@ -39,6 +40,7 @@ GET http://localhost:5173/api/coversheets/?page=306
 ✅ Resultado: Los últimos registros (debería tener has_next: false)
 
 2️⃣ Cambiar Cantidad de Registros por Página
+
 100 registros por página
 GET http://localhost:5173/api/coversheets/?limit=100
 ✅ Resultado: 100 registros, total_pages cambia a 153
@@ -50,6 +52,7 @@ GET http://localhost:5173/api/coversheets/?page=5&limit=100
 ✅ Resultado: Registros 401-500
 
 3️⃣ Filtrar por Fecha
+
 Solo registros del 28 de diciembre 2025
 GET http://localhost:5173/api/coversheets/?start_date=2025-12-28&end_date=2025-12-28
 ✅ Resultado: Solo los 3 registros de esa fecha (según tu respuesta)
@@ -61,6 +64,7 @@ Registros hasta octubre 2025
 GET http://localhost:5173/api/coversheets/?end_date=2025-10-31
 
 4️⃣ Filtrar por Camión/Driver/Trailer
+
 Basándome en tu respuesta, veo estos IDs:
 Filtrar por camión específico (ejemplo: Truck 725)
 GET http://localhost:5173/api/coversheets/?truck_id=68f9c2673197bf6aed3d3fef
@@ -72,6 +76,7 @@ Filtrar por homebase (ejemplo: IRL)
 GET http://localhost:5173/api/coversheets/?homebase_id=68fbf9d3a696c170eef6148d
 
 5️⃣ Combinar Múltiples Filtros
+
 Camión 725 en diciembre 2025
 GET http://localhost:5173/api/coversheets/?truck_id=68f9c2673197bf6aed3d3fef&start_date=2025-12-01&end_date=2025-12-31
 Conductor Angel Martinez + Página 2 + 100 registros
@@ -80,6 +85,7 @@ Homebase IRL + Octubre 2025 + Ordenado por clockIn
 GET http://localhost:5173/api/coversheets/?homebase_id=68fbf9d3a696c170eef6148d&start_date=2025-10-01&end_date=2025-10-31&sort_by=clockIn&sort_order=-1
 
 6️⃣ Cambiar Ordenamiento
+
 Ordenar por fecha ascendente (más antiguo primero)
 GET http://localhost:5173/api/coversheets/?sort_order=1
 Ordenar por clockIn descendente
@@ -87,7 +93,8 @@ GET http://localhost:5173/api/coversheets/?sort_by=clockIn&sort_order=-1
 Ordenar por truckNumber ascendente
 GET http://localhost:5173/api/coversheets/?sort_by=truckNumber&sort_order=1
 
-Ejemplos con Rangos de Fechas
+7 Ejemplos con Rangos de Fechas
+
 📅 Todo Diciembre 2025
 GET http://localhost:5173/api/coversheets/?start_date=2025-12-01&end_date=2025-12-31
 📅 Todo Octubre 2025
