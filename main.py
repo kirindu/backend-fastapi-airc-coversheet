@@ -46,7 +46,7 @@ origins = [
     "https://airc-coversheet.onrender.com",
     "http://www.render.com",
     "https://www.acedisposal.com",
-    "https://airccoversheet.kizunadata.cloud"
+    "https://airccoversheet.kizunadata.cloud",
     "http://localhost",
     "http://localhost:8080",
     "http://127.0.0.1:8080",
