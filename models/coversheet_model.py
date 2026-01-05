@@ -37,7 +37,6 @@ class CoversheetModel(BaseModel):
     driver_id: str
     
     # OTHER FIELDS
+    active: Optional[bool] = Field(default=True)  # ✅ Campo para borrado lógico
     createdAt: Optional[datetime] = Field(default_factory=lambda: datetime.now(ZoneInfo("America/Denver")))
     updatedAt: Optional[datetime] = None
-    
-    

@@ -1,4 +1,3 @@
-
 def coversheet_helper(coversheet) -> dict:
     return {
         # GENERAL INFO
@@ -36,6 +35,9 @@ def coversheet_helper(coversheet) -> dict:
         "trailerNumber": coversheet.get("trailerNumber", ""),
         "homeBaseName": coversheet.get("homeBaseName", ""),
         "driverName": coversheet.get("driverName", ""),
+        
+        # SOFT DELETE FIELD
+        "active": coversheet.get("active", True),  # ✅ Campo de borrado lógico
         
         # AUDIT FIELDS
 
