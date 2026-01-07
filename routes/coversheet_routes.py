@@ -319,16 +319,36 @@ async def update_coversheet(id: str, coversheet: CoversheetModel):
             return error_response("ID inválido", status_code=400)
         
         data = coversheet.model_dump(exclude_unset=True)
-        data.pop("date", None)  # No permitir cambio de fecha por aquí
         
         # ✅ PASO 1: Limpiar campos obsoletos
         for f in ["load_id", "downtime_id", "spareTruckInfo_id"]: 
             data.pop(f, None)
         
-        # ✅ PASO 2: Actualizar updatedAt
-        data["updatedAt"] = datetime.now(ZoneInfo("America/Denver"))
+        # ✅ PASO 2: Manejar actualización de fecha
+        tz = ZoneInfo("America/Denver")
+        if "date" in data and data["date"] is not None:
+            # Si se envió una fecha para actualizar, procesarla correctamente
+            frontend_date = data["date"]
+            
+            # Convertir a Denver primero
+            if frontend_date.tzinfo is None:
+                frontend_date_denver = frontend_date.replace(tzinfo=tz)
+            else:
+                frontend_date_denver = frontend_date.astimezone(tz)
+            
+            # Crear la fecha a medianoche en Denver
+            data["date"] = datetime(
+                frontend_date_denver.year,
+                frontend_date_denver.month,
+                frontend_date_denver.day,
+                0, 0, 0, 0,
+                tzinfo=tz
+            )
+        
+        # ✅ PASO 3: Actualizar updatedAt
+        data["updatedAt"] = datetime.now(tz)
 
-        # ✅ PASO 3: Desnormalización de nombres para velocidad
+        # ✅ PASO 4: Desnormalización de nombres para velocidad
         maps = {
             "truck_id": (trucks_collection, "truckNumber", "truckNumber"),
             "trailer_id": (trailers_collection, "trailerNumber", "trailerNumber"),
@@ -348,10 +368,10 @@ async def update_coversheet(id: str, coversheet: CoversheetModel):
                 if ref_doc: 
                     data[target] = ref_doc.get(key, "")
 
-        # ✅ PASO 4: Actualizar en la base de datos
+        # ✅ PASO 5: Actualizar en la base de datos
         await coversheets_collection.update_one({"_id": ObjectId(id)}, {"$set": data})
         
-        # ✅ PASO 5: Recuperar el documento actualizado y devolverlo
+        # ✅ PASO 6: Recuperar el documento actualizado y devolverlo
         updated = await coversheets_collection.find_one({"_id": ObjectId(id)})
         return success_response(coversheet_helper(updated))
         
