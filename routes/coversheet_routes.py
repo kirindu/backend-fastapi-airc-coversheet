@@ -274,7 +274,8 @@ async def create_coversheet(coversheet: CoversheetModel, current_user: str = Dep
             tzinfo=tz
         )
         data["createdAt"] = now_denver
-        data["updatedAt"] = now_denver
+        # updatedAt no se establece en POST, solo en PUT
+        data["updatedAt"] = None
 
         # ✅ PASO 4: Insertar en la base de datos
         result = await coversheets_collection.insert_one(data)
