@@ -265,14 +265,33 @@ async def create_coversheet(coversheet: CoversheetModel, current_user: str = Dep
         tz = ZoneInfo("America/Denver")
         now_denver = datetime.now(tz)
         
-        # Crear la fecha a medianoche en zona horaria de Denver
-        data["date"] = datetime(
-            now_denver.year, 
-            now_denver.month, 
-            now_denver.day, 
-            0, 0, 0, 0, 
-            tzinfo=tz
-        )
+        # Si el frontend envió una fecha, usarla; si no, usar la fecha actual
+        if data.get("date"):
+            # Obtener la fecha enviada desde el frontend
+            frontend_date = data["date"]
+            
+            # Si la fecha no tiene zona horaria, asignar Denver
+            if frontend_date.tzinfo is None:
+                frontend_date = frontend_date.replace(tzinfo=tz)
+            
+            # Crear la fecha a medianoche en zona horaria de Denver
+            data["date"] = datetime(
+                frontend_date.year, 
+                frontend_date.month, 
+                frontend_date.day, 
+                0, 0, 0, 0, 
+                tzinfo=tz
+            )
+        else:
+            # Si no hay fecha del frontend, usar la fecha actual
+            data["date"] = datetime(
+                now_denver.year, 
+                now_denver.month, 
+                now_denver.day, 
+                0, 0, 0, 0, 
+                tzinfo=tz
+            )
+        
         data["createdAt"] = now_denver
         # updatedAt no se establece en POST, solo en PUT
         data["updatedAt"] = None
