@@ -101,8 +101,8 @@ async def get_all_coversheets(
         if limit < 1 or limit > 500:
             return error_response("El parámetro 'limit' debe estar entre 1 y 500", status_code=400)
         
-        # ✅ Construir query de filtros - SOLO coversheets activos
-        query = {"active": True}
+        # Construir query de filtros
+        query = {}
         tz = ZoneInfo("America/Denver")
         
         # Filtro de fechas
@@ -192,50 +192,54 @@ async def get_all_coversheets(
     except Exception as e:
         return error_response(f"Error al obtener coversheets: {str(e)}")
 
-@router.get("/{id}")
-async def get_coversheet_with_details(id: str):
-    """Obtiene un coversheet específico con todos sus datos relacionados."""
+# 1. RUTA DE FECHA (Debe ir antes de {id})
+@router.get("/by-date/{date_str}")
+async def get_coversheets_by_date(date_str: str):
+    """Postman: GET /api/coversheets/by-date/2025-12-24"""
     try:
-        if not ObjectId.is_valid(id): 
-            return error_response("ID inválido", status_code=400)
-        
-        # ✅ Buscar coversheet activo
-        doc = await coversheets_collection.find_one({
-            "_id": ObjectId(id),
-            "active": True
-        })
-        
+        try:
+            query_date = datetime.strptime(date_str, "%Y-%m-%d")
+        except ValueError:
+            return error_response("Formato inválido. Usa YYYY-MM-DD", status_code=400)
+
+        tz = ZoneInfo("America/Denver")
+        start = datetime(query_date.year, query_date.month, query_date.day, tzinfo=tz)
+        end = start + timedelta(days=1)
+
+        cursor = coversheets_collection.find({"date": {"$gte": start, "$lt": end}})
+        docs = await cursor.to_list(length=None)
+        return success_response([coversheet_helper(d) for d in docs])
+    except Exception as e:
+        return error_response(str(e))
+
+# 2. RUTA DE ID ÚNICO
+@router.get("/{id}")
+async def get_coversheet_by_id(id: str):
+    try:
+        if not ObjectId.is_valid(id):
+            return error_response("ID de Coversheet inválido", status_code=400)
+            
+        doc = await coversheets_collection.find_one({"_id": ObjectId(id)})
         if not doc:
-            return error_response("Coversheet no encontrada o está inactiva", status_code=404)
+            return error_response("No encontrada", status_code=404)
         
-        # Expandir con loads, downtimes y spares
-        result = await expand_related_data_from_doc(doc)
-        return success_response(result)
+        # ✅ Expande y retorna directamente (ya está convertido dentro de la función)
+        data = await expand_related_data_from_doc(doc)
+        return success_response(data)  # ❌ NO llames a coversheet_helper aquí
         
     except Exception as e:
         return error_response(str(e))
 
-@router.post("/")
-async def create_coversheet(coversheet: CoversheetModel):
+@router.post("/", status_code=status.HTTP_201_CREATED)
+async def create_coversheet(coversheet: CoversheetModel, current_user: str = Depends(get_current_user)):
     try:
-        # ✅ PASO 1: Usar exclude_unset para obtener solo los campos enviados
-        data = coversheet.model_dump(exclude_unset=True)
+        data = coversheet.model_dump()
         
-        # ✅ PASO 2: Limpiar campos obsoletos
-        for f in ["load_id", "downtime_id", "spareTruckInfo_id"]: 
+        # ✅ PASO 1: Limpiar campos obsoletos
+        for f in ["load_id", "downtime_id", "spareTruckInfo_id"]:
             data.pop(f, None)
-        
-        # ✅ PASO 3: Establecer timestamps
-        data["createdAt"] = datetime.now(ZoneInfo("America/Denver"))
-        
-        # ✅ NUEVA LÓGICA: Solo establecer date si no fue enviado por el usuario
-        if "date" not in data:
-            data["date"] = data["createdAt"].replace(hour=0, minute=0, second=0, microsecond=0)
-        
-        data["updatedAt"] = data["createdAt"]
-        data["active"] = True
 
-        # ✅ PASO 4: Desnormalización de nombres para velocidad
+        # ✅ PASO 2: Convertir IDs a ObjectId Y buscar nombres relacionados (DESNORMALIZACIÓN)
         maps = {
             "truck_id": (trucks_collection, "truckNumber", "truckNumber"),
             "trailer_id": (trailers_collection, "trailerNumber", "trailerNumber"),
@@ -244,7 +248,7 @@ async def create_coversheet(coversheet: CoversheetModel):
         }
 
         for field, (col, key, target) in maps.items():
-            if field in data:
+            if data.get(field):
                 # Convertir string ID a ObjectId
                 data[field] = ObjectId(data[field])
                 
@@ -252,13 +256,30 @@ async def create_coversheet(coversheet: CoversheetModel):
                 ref_doc = await col.find_one({"_id": data[field]})
                 
                 # Guardar el nombre en el campo desnormalizado
-                if ref_doc: 
+                if ref_doc:
                     data[target] = ref_doc.get(key, "")
+                else:
+                    data[target] = ""  # Si no se encuentra, guardar vacío
 
-        # ✅ PASO 5: Insertar en la base de datos
+        # ✅ PASO 3: Establecer fechas
+        tz = ZoneInfo("America/Denver")
+        now_denver = datetime.now(tz)
+        
+        # Crear la fecha a medianoche en zona horaria de Denver
+        data["date"] = datetime(
+            now_denver.year, 
+            now_denver.month, 
+            now_denver.day, 
+            0, 0, 0, 0, 
+            tzinfo=tz
+        )
+        data["createdAt"] = now_denver
+        data["updatedAt"] = now_denver
+
+        # ✅ PASO 4: Insertar en la base de datos
         result = await coversheets_collection.insert_one(data)
         
-        # ✅ PASO 6: Recuperar el documento insertado y devolverlo
+        # ✅ PASO 5: Recuperar el documento insertado y devolverlo
         new_doc = await coversheets_collection.find_one({"_id": result.inserted_id})
         return success_response(coversheet_helper(new_doc), msg="Creada exitosamente")
         
@@ -271,20 +292,17 @@ async def update_coversheet(id: str, coversheet: CoversheetModel):
         if not ObjectId.is_valid(id): 
             return error_response("ID inválido", status_code=400)
         
-        # ✅ PASO 1: Usar exclude_unset para obtener solo los campos enviados
         data = coversheet.model_dump(exclude_unset=True)
+        data.pop("date", None)  # No permitir cambio de fecha por aquí
         
-        # ✅ PASO 2: Limpiar campos obsoletos
+        # ✅ PASO 1: Limpiar campos obsoletos
         for f in ["load_id", "downtime_id", "spareTruckInfo_id"]: 
             data.pop(f, None)
         
-        # ✅ PASO 3: Actualizar updatedAt
+        # ✅ PASO 2: Actualizar updatedAt
         data["updatedAt"] = datetime.now(ZoneInfo("America/Denver"))
-        
-        # ✅ NUEVA LÓGICA: Permitir actualización de date solo si fue enviado
-        # (si no fue enviado, exclude_unset ya se encargó de no incluirlo en data)
 
-        # ✅ PASO 4: Desnormalización de nombres para velocidad
+        # ✅ PASO 3: Desnormalización de nombres para velocidad
         maps = {
             "truck_id": (trucks_collection, "truckNumber", "truckNumber"),
             "trailer_id": (trailers_collection, "trailerNumber", "trailerNumber"),
@@ -304,16 +322,10 @@ async def update_coversheet(id: str, coversheet: CoversheetModel):
                 if ref_doc: 
                     data[target] = ref_doc.get(key, "")
 
-        # ✅ PASO 5: Actualizar en la base de datos (solo si está activo)
-        result = await coversheets_collection.update_one(
-            {"_id": ObjectId(id), "active": True}, 
-            {"$set": data}
-        )
+        # ✅ PASO 4: Actualizar en la base de datos
+        await coversheets_collection.update_one({"_id": ObjectId(id)}, {"$set": data})
         
-        if result.matched_count == 0:
-            return error_response("Coversheet no encontrada o está inactiva", status_code=404)
-        
-        # ✅ PASO 6: Recuperar el documento actualizado y devolverlo
+        # ✅ PASO 5: Recuperar el documento actualizado y devolverlo
         updated = await coversheets_collection.find_one({"_id": ObjectId(id)})
         return success_response(coversheet_helper(updated))
         
@@ -323,101 +335,26 @@ async def update_coversheet(id: str, coversheet: CoversheetModel):
 # 3. RUTAS DE HIJOS (REFERENCIA INVERSA)
 @router.get("/{id}/load")
 async def get_loads_of_coversheet(id: str):
-    if not ObjectId.is_valid(id): 
-        return error_response("ID inválido", status_code=400)
-    
-    # ✅ Verificar que el coversheet existe y está activo
-    coversheet = await coversheets_collection.find_one({
-        "_id": ObjectId(id),
-        "active": True
-    })
-    if not coversheet:
-        return error_response("Coversheet no encontrada o está inactiva", status_code=404)
-    
+    if not ObjectId.is_valid(id): return error_response("ID inválido", status_code=400)
     cursor = loads_collection.find({"coversheet_ref_id": ObjectId(id)})
     return success_response([load_helper(d) for d in await cursor.to_list(length=None)])
 
 @router.get("/{id}/downtime")
 async def get_downtimes_of_coversheet(id: str):
-    if not ObjectId.is_valid(id): 
-        return error_response("ID inválido", status_code=400)
-    
-    # ✅ Verificar que el coversheet existe y está activo
-    coversheet = await coversheets_collection.find_one({
-        "_id": ObjectId(id),
-        "active": True
-    })
-    if not coversheet:
-        return error_response("Coversheet no encontrada o está inactiva", status_code=404)
-    
+    if not ObjectId.is_valid(id): return error_response("ID inválido", status_code=400)
     cursor = downtimes_collection.find({"coversheet_ref_id": ObjectId(id)})
     return success_response([downtime_helper(d) for d in await cursor.to_list(length=None)])
 
 @router.get("/{id}/sparetruckinfo")
 async def get_spares_of_coversheet(id: str):
-    if not ObjectId.is_valid(id): 
-        return error_response("ID inválido", status_code=400)
-    
-    # ✅ Verificar que el coversheet existe y está activo
-    coversheet = await coversheets_collection.find_one({
-        "_id": ObjectId(id),
-        "active": True
-    })
-    if not coversheet:
-        return error_response("Coversheet no encontrada o está inactiva", status_code=404)
-    
+    if not ObjectId.is_valid(id): return error_response("ID inválido", status_code=400)
     cursor = sparetruckinfos_collection.find({"coversheet_ref_id": ObjectId(id)})
     return success_response([sparetruckinfo_helper(d) for d in await cursor.to_list(length=None)])
 
-# ✅ BORRADO LÓGICO - Cambia active de true a false
 @router.delete("/{id}")
 async def delete_coversheet(id: str, current_user: str = Depends(get_current_user)):
     """
-    Realiza un borrado lógico de una coversheet cambiando active de true a false.
-    Los documentos relacionados (loads, downtimes, spareTruckInfos) no se eliminan.
-    """
-    try:
-        if not ObjectId.is_valid(id):
-            return error_response("ID de Coversheet inválido", status_code=400)
-        
-        coversheet_id = ObjectId(id)
-        
-        # Verificar si existe la coversheet y está activa
-        existing = await coversheets_collection.find_one({
-            "_id": coversheet_id,
-            "active": True
-        })
-        if not existing:
-            return error_response("Coversheet no encontrada o ya está inactiva", status_code=404)
-        
-        # ✅ Borrado lógico: cambiar active a false
-        result = await coversheets_collection.update_one(
-            {"_id": coversheet_id},
-            {
-                "$set": {
-                    "active": False,
-                    "updatedAt": datetime.now(ZoneInfo("America/Denver"))
-                }
-            }
-        )
-        
-        if result.modified_count == 1:
-            return success_response(
-                {"id": id, "active": False}, 
-                msg="Coversheet desactivada exitosamente (borrado lógico)"
-            )
-        else:
-            return error_response("No se pudo desactivar la coversheet", status_code=500)
-            
-    except Exception as e:
-        return error_response(f"Error al desactivar: {str(e)}")
-
-# ✅ BORRADO FÍSICO (OPCIONAL) - Elimina permanentemente
-@router.delete("/{id}/hard-delete")
-async def hard_delete_coversheet(id: str, current_user: str = Depends(get_current_user)):
-    """
-    Elimina PERMANENTEMENTE una coversheet y sus documentos relacionados.
-    ⚠️ ADVERTENCIA: Esta acción NO se puede deshacer.
+    Elimina una coversheet y opcionalmente sus documentos relacionados.
     """
     try:
         if not ObjectId.is_valid(id):
@@ -431,20 +368,21 @@ async def hard_delete_coversheet(id: str, current_user: str = Depends(get_curren
             return error_response("Coversheet no encontrada", status_code=404)
         
         # Eliminar documentos relacionados (loads, downtimes, spareTruckInfos)
+        # Si prefieres mantenerlos, comenta estas líneas
         await loads_collection.delete_many({"coversheet_ref_id": coversheet_id})
         await downtimes_collection.delete_many({"coversheet_ref_id": coversheet_id})
         await sparetruckinfos_collection.delete_many({"coversheet_ref_id": coversheet_id})
         
-        # Eliminar la coversheet permanentemente
+        # Eliminar la coversheet
         result = await coversheets_collection.delete_one({"_id": coversheet_id})
         
         if result.deleted_count == 1:
             return success_response(
                 {"id": id}, 
-                msg="Coversheet y sus datos relacionados eliminados PERMANENTEMENTE"
+                msg="Coversheet y sus datos relacionados eliminados exitosamente"
             )
         else:
             return error_response("No se pudo eliminar la coversheet", status_code=500)
             
     except Exception as e:
-        return error_response(f"Error al eliminar permanentemente: {str(e)}")
+        return error_response(f"Error al eliminar: {str(e)}")
