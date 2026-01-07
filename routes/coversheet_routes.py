@@ -270,15 +270,21 @@ async def create_coversheet(coversheet: CoversheetModel, current_user: str = Dep
             # Obtener la fecha enviada desde el frontend
             frontend_date = data["date"]
             
-            # Si la fecha no tiene zona horaria, asignar Denver
+            # ⚠️ IMPORTANTE: Convertir primero a la zona horaria de Denver
+            # Si viene en UTC (ej: 2026-01-07T04:15:00Z), al convertir a Denver
+            # se convierte correctamente (2026-01-06T21:15:00-07:00)
             if frontend_date.tzinfo is None:
-                frontend_date = frontend_date.replace(tzinfo=tz)
+                # Si no tiene zona horaria, asumimos que es Denver
+                frontend_date_denver = frontend_date.replace(tzinfo=tz)
+            else:
+                # Si tiene zona horaria (probablemente UTC), convertir a Denver
+                frontend_date_denver = frontend_date.astimezone(tz)
             
-            # Crear la fecha a medianoche en zona horaria de Denver
+            # Ahora extraer año/mes/día de la fecha EN DENVER (no en UTC)
             data["date"] = datetime(
-                frontend_date.year, 
-                frontend_date.month, 
-                frontend_date.day, 
+                frontend_date_denver.year,   # Año en Denver
+                frontend_date_denver.month,  # Mes en Denver
+                frontend_date_denver.day,    # Día en Denver ← ¡CORRECTO!
                 0, 0, 0, 0, 
                 tzinfo=tz
             )
