@@ -102,7 +102,7 @@ async def get_all_coversheets(
             return error_response("El parámetro 'limit' debe estar entre 1 y 500", status_code=400)
         
         # Construir query de filtros
-        query = {}
+        query = {"active": True}  # ✅ Solo mostrar coversheets activos (soft delete)
         tz = ZoneInfo("America/Denver")
         
         # Filtro de fechas
@@ -206,7 +206,11 @@ async def get_coversheets_by_date(date_str: str):
         start = datetime(query_date.year, query_date.month, query_date.day, tzinfo=tz)
         end = start + timedelta(days=1)
 
-        cursor = coversheets_collection.find({"date": {"$gte": start, "$lt": end}})
+        # ✅ Filtrar solo coversheets activos
+        cursor = coversheets_collection.find({
+            "date": {"$gte": start, "$lt": end},
+            "active": True
+        })
         docs = await cursor.to_list(length=None)
         return success_response([coversheet_helper(d) for d in docs])
     except Exception as e:
@@ -219,9 +223,13 @@ async def get_coversheet_by_id(id: str):
         if not ObjectId.is_valid(id):
             return error_response("ID de Coversheet inválido", status_code=400)
             
-        doc = await coversheets_collection.find_one({"_id": ObjectId(id)})
+        # ✅ Filtrar solo coversheets activos
+        doc = await coversheets_collection.find_one({
+            "_id": ObjectId(id),
+            "active": True
+        })
         if not doc:
-            return error_response("No encontrada", status_code=404)
+            return error_response("No encontrada o está eliminada", status_code=404)
         
         # ✅ Expande y retorna directamente (ya está convertido dentro de la función)
         data = await expand_related_data_from_doc(doc)
@@ -400,7 +408,7 @@ async def get_spares_of_coversheet(id: str):
 @router.delete("/{id}")
 async def delete_coversheet(id: str, current_user: str = Depends(get_current_user)):
     """
-    Elimina una coversheet y opcionalmente sus documentos relacionados.
+    Elimina lógicamente una coversheet (soft delete) marcándola como inactiva.
     """
     try:
         if not ObjectId.is_valid(id):
@@ -408,13 +416,70 @@ async def delete_coversheet(id: str, current_user: str = Depends(get_current_use
         
         coversheet_id = ObjectId(id)
         
-        # Verificar si existe la coversheet
+        # Verificar si existe la coversheet y si está activa
         existing = await coversheets_collection.find_one({"_id": coversheet_id})
         if not existing:
             return error_response("Coversheet no encontrada", status_code=404)
         
-        # Eliminar documentos relacionados (loads, downtimes, spareTruckInfos)
-        # Si prefieres mantenerlos, comenta estas líneas
+        if not existing.get("active", True):
+            return error_response("La coversheet ya está eliminada", status_code=400)
+        
+        # ✅ SOFT DELETE: Marcar como inactiva en lugar de eliminar físicamente
+        tz = ZoneInfo("America/Denver")
+        result = await coversheets_collection.update_one(
+            {"_id": coversheet_id},
+            {
+                "$set": {
+                    "active": False,
+                    "updatedAt": datetime.now(tz)
+                }
+            }
+        )
+        
+        if result.modified_count == 1:
+            return success_response(
+                {"id": id}, 
+                msg="Coversheet eliminada exitosamente"
+            )
+        else:
+            return error_response("No se pudo eliminar la coversheet", status_code=500)
+            
+    except Exception as e:
+        return error_response(f"Error al eliminar: {str(e)}")
+
+
+@router.delete("/{id}/permanent")
+async def permanent_delete_coversheet(id: str, current_user: str = Depends(get_current_user)):
+    """
+    ⚠️ HARD DELETE: Elimina permanentemente una coversheet y TODOS sus documentos relacionados.
+    
+    Esta operación es IRREVERSIBLE y eliminará físicamente:
+    - La coversheet
+    - Todos los loads asociados
+    - Todos los downtimes asociados
+    - Todos los spare truck infos asociados
+    
+    Usar con precaución. Para eliminación normal, usar DELETE /{id} (soft delete).
+    """
+    try:
+        if not ObjectId.is_valid(id):
+            return error_response("ID de Coversheet inválido", status_code=400)
+        
+        coversheet_id = ObjectId(id)
+        
+        # Verificar si existe la coversheet (sin importar si está activa o no)
+        existing = await coversheets_collection.find_one({"_id": coversheet_id})
+        if not existing:
+            return error_response("Coversheet no encontrada", status_code=404)
+        
+        # ✅ HARD DELETE: Eliminar físicamente todos los registros relacionados
+        
+        # Contar documentos relacionados antes de eliminarlos (para reporte)
+        loads_count = await loads_collection.count_documents({"coversheet_ref_id": coversheet_id})
+        downtimes_count = await downtimes_collection.count_documents({"coversheet_ref_id": coversheet_id})
+        spares_count = await sparetruckinfos_collection.count_documents({"coversheet_ref_id": coversheet_id})
+        
+        # Eliminar documentos relacionados
         await loads_collection.delete_many({"coversheet_ref_id": coversheet_id})
         await downtimes_collection.delete_many({"coversheet_ref_id": coversheet_id})
         await sparetruckinfos_collection.delete_many({"coversheet_ref_id": coversheet_id})
@@ -424,11 +489,18 @@ async def delete_coversheet(id: str, current_user: str = Depends(get_current_use
         
         if result.deleted_count == 1:
             return success_response(
-                {"id": id}, 
-                msg="Coversheet y sus datos relacionados eliminados exitosamente"
+                {
+                    "id": id,
+                    "deleted_related_documents": {
+                        "loads": loads_count,
+                        "downtimes": downtimes_count,
+                        "spare_truck_infos": spares_count
+                    }
+                }, 
+                msg=f"Coversheet y {loads_count + downtimes_count + spares_count} documentos relacionados eliminados permanentemente"
             )
         else:
             return error_response("No se pudo eliminar la coversheet", status_code=500)
             
     except Exception as e:
-        return error_response(f"Error al eliminar: {str(e)}")
+        return error_response(f"Error al eliminar permanentemente: {str(e)}")
