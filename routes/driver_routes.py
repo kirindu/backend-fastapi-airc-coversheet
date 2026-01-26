@@ -20,8 +20,8 @@ async def driver_login(driver: DriverModel):
 
         # ✅ Crear token JWT (igual que en user_routes.py)
         access_token = create_access_token(
-            data={"sub": db_driver["username"]}, 
-            expires_delta=timedelta(minutes=60)
+            data={"sub": db_driver["username"]}
+            # expires_delta=timedelta(minutes=60)
         )
 
         # ✅ Estructura de respuesta igual a user login
