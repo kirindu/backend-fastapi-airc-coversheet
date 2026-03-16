@@ -25,7 +25,7 @@ class CoversheetModel(BaseModel):
     fuel: str
     dieselExhaustFluid: str
     
-    date: Optional[datetime] = None
+    date: Optional[datetime] = None # ✅ Campo para la fecha del coversheet, sino se pasa la fecha actual se asignará automáticamente
     notes: Optional[str] = None
     
     
