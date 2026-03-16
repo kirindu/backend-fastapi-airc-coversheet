@@ -25,7 +25,7 @@ class CoversheetModel(BaseModel):
     fuel: str
     dieselExhaustFluid: str
     
-    date: Optional[datetime] = Field(default_factory=lambda: datetime.now(ZoneInfo("America/Denver")))
+    date: Optional[datetime] = None
     notes: Optional[str] = None
     
     
@@ -38,5 +38,5 @@ class CoversheetModel(BaseModel):
     
     # OTHER FIELDS
     active: Optional[bool] = Field(default=True)  # ✅ Campo para borrado lógico
-    createdAt: Optional[datetime] = Field(default_factory=lambda: datetime.now(ZoneInfo("America/Denver")))
+    createdAt: Optional[datetime] = None
     updatedAt: Optional[datetime] = None
