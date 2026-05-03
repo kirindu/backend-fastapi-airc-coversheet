@@ -329,7 +329,7 @@ async def update_coversheet(id: str, coversheet: CoversheetModel):
         data = coversheet.model_dump(exclude_unset=True)
         
         # ✅ PASO 1: Limpiar campos obsoletos
-        for f in ["load_id", "downtime_id", "spareTruckInfo_id"]: 
+        for f in ["load_id", "downtime_id", "spareTruckInfo_id", "date", "createdAt"]:
             data.pop(f, None)
         
         # ✅ PASO 2: Manejar actualización de fecha
