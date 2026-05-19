@@ -1,7 +1,7 @@
 Para correr el proyecto
 
 
-Si es primera vez hay que preparar el ambiente virtual
+Si es primera vez hay que preparar el ambiente virtual :
 
 pipx install virtualenv
 pipx ensurepath

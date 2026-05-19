@@ -19,7 +19,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             return error_response("Credenciales inválidas", status_code=status.HTTP_401_UNAUTHORIZED)
 
         access_token = create_access_token(
-            data={"sub": user["email"]}, expires_delta=timedelta(minutes=60)
+            data={"sub": user["email"]}
+            #expires_delta=timedelta(minutes=60)
         )
 
         return success_response({
