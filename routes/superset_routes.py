@@ -6,7 +6,7 @@ import os
 # Creamos el router
 router = APIRouter()
 
-# ⚠️ IMPORTANTE: Cambia estos valores por tu IP/Dominio y credenciales reales
+# ⚠️ IMPORTANTE: Cambia estos valores por tu IP/Dominio y credenciales reales 
 SUPERSET_URL = "https://supersetreports.acedisposal.it.com"  # O "http://localhost:8088" si corren en el mismo server
 SUPERSET_API_USER = "api_embed_user"
 SUPERSET_API_PASSWORD = "1kVYzT15cENWHdPFssWH"
