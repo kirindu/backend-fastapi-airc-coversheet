@@ -9,7 +9,6 @@ from contextlib import asynccontextmanager
 from config.database import ping_database
 from config.database import client
 
-
 from routes.route_routes import router as route_router
 from routes.truck_routes import router as truck_router
 from routes.trailer_routes import router as trailer_router
@@ -29,6 +28,8 @@ from routes.load_routes import router as load_router
 
 from routes.user_routes import router as user_router
 from routes.email_routes import router as email_router
+from routes.superset_routes import router as superset_router
+
 
 
 @asynccontextmanager
@@ -85,6 +86,7 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 # Incluijmos las rutas de la API
 
 app.include_router(email_router, prefix="/api/utils", tags=["Email"])
+app.include_router(superset_router, prefix="/api/superset", tags=["Superset Reports"])
 
 
 app.include_router(route_router, prefix="/api/routes", tags=["Routes"])
