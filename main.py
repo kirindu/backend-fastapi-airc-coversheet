@@ -48,7 +48,7 @@ origins = [
     "http://www.render.com",
     "https://www.acedisposal.com",
     "https://airccoversheet.kizunadata.cloud",
-    "https://airccoversheetbackendstaging.acedisposal.it.com",
+    "https://airccoversheetstaging.acedisposal.it.com",
     "http://localhost",
     "http://localhost:8080",
     "http://127.0.0.1:8080",
