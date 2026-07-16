@@ -12,6 +12,7 @@ from config.database import operators_collection
 
 from schemas.load_scheme import load_helper
 from utils.response_helper import success_response, error_response
+from utils.image_utils import compress_image
 
 from bson import ObjectId
 from typing import List, Optional
@@ -62,13 +63,24 @@ async def create_load_with_images(
                     )
 
                 contents = await image.read()
-                if len(contents) > 5 * 1024 * 1024:
+                if len(contents) > 15 * 1024 * 1024:
                     return error_response(
-                        f"The file '{image.filename}' exceeds the maximum size of 5MB.",
+                        f"The file '{image.filename}' exceeds the maximum size of 15MB.",
                         status_code=status.HTTP_400_BAD_REQUEST
                     )
 
-                filename = f"{uuid.uuid4()}_{image.filename}"
+                # 🗜️ Comprimir la imagen (~300 KB máx, JPEG, lado máx 1600px)
+                try:
+                    contents = compress_image(contents)
+                except Exception:
+                    return error_response(
+                        f"The file '{image.filename}' is not a valid image.",
+                        status_code=status.HTTP_400_BAD_REQUEST
+                    )
+
+                # Siempre se guarda como .jpg porque se re-codifica a JPEG
+                base_name = os.path.splitext(image.filename)[0]
+                filename = f"{uuid.uuid4()}_{base_name}.jpg"
                 file_path = os.path.join(upload_dir, filename)
                 with open(file_path, "wb") as buffer:
                     buffer.write(contents)
@@ -196,13 +208,24 @@ async def update_load_with_form(
                     )
 
                 contents = await image.read()
-                if len(contents) > 5 * 1024 * 1024:
+                if len(contents) > 15 * 1024 * 1024:
                     return error_response(
-                        f"The image '{image.filename}' exceeds the maximum allowed size of 5MB.",
+                        f"The image '{image.filename}' exceeds the maximum allowed size of 15MB.",
                         status_code=status.HTTP_400_BAD_REQUEST
                     )
 
-                filename = f"{uuid.uuid4()}_{image.filename}"
+                # 🗜️ Comprimir la imagen (~300 KB máx, JPEG, lado máx 1600px)
+                try:
+                    contents = compress_image(contents)
+                except Exception:
+                    return error_response(
+                        f"The file '{image.filename}' is not a valid image.",
+                        status_code=status.HTTP_400_BAD_REQUEST
+                    )
+
+                # Siempre se guarda como .jpg porque se re-codifica a JPEG
+                base_name = os.path.splitext(image.filename)[0]
+                filename = f"{uuid.uuid4()}_{base_name}.jpg"
                 file_path = os.path.join(upload_dir, filename)
                 with open(file_path, "wb") as buffer:
                     buffer.write(contents)

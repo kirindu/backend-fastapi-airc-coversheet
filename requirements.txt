@@ -6,7 +6,6 @@ pydantic
 SQLAlchemy
 PyMySQL
 pymongo
-python-dotenv
 pydantic[email]
 python-multipart
 colorama
@@ -16,3 +15,4 @@ httpx
 python-jose[cryptography]
 passlib[bcrypt]
 bcrypt==4.0.1
+pillow
