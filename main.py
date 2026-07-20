@@ -45,7 +45,7 @@ app = FastAPI(lifespan=lifespan)
 origins = [
     "https://coversheet-app.onrender.com",
     "https://airc-coversheet.onrender.com",
-    "https://backendairccoversheet.acedisposal.it.com",
+    "https://airccoversheet.acedisposal.it.com",
     "http://www.render.com",
     "https://www.acedisposal.com",
     "https://airccoversheet.kizunadata.cloud",
