@@ -115,3 +115,7 @@ app.include_router(user_router, prefix="/api/users", tags=["Users"])
 @app.get("/")
 async def root():
     return {"message": "Welcome to FastAPI with MongoDB and Motor!"}
+
+@app.get("/health")
+async def health():
+    return {"ok": True, "service": "airc-backend-pro"}
